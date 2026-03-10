@@ -11,6 +11,7 @@ import Secret from "../Secret";
 import Privateroute from "./Privateroute";
 import Dashboard from "../../Dasboard/Dashboard";
 import AdminOverview from "../../Dasboard/AdminOverview";
+import Addfood from "../../Dasboard/AdminDashboard/Addfood";
 
 
 const router = createBrowserRouter([
@@ -52,6 +53,10 @@ const router = createBrowserRouter([
             {
                 path:'',
                 element : <AdminOverview/>
+            },
+            {
+                path:'addfood',
+                element : <Addfood/>
             }
         ]
     }

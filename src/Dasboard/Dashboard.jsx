@@ -1,23 +1,24 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { useContext, useState } from "react";
 import './dashboard.css'
 import { AuthContext } from "../Authentication/Provider/AuthProbider";
+import { FiUser } from "react-icons/fi";
 
 // Icons (you can replace with your preferred icon library)
 const Dashboard = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const {user} =useContext(AuthContext)
+    const { user } = useContext(AuthContext)
 
     const navigationItems = [
-        { path: '/dashboard', name: 'Overview', icon: '📊' },
-        { path: '/dashboard/card', name: 'Card', icon: '💳' },
-        { path: '/dashboard/menu', name: 'Menu', icon: '📋' },
-        { path: '/dashboard/orders', name: 'Orders', icon: '🍽️' },
-        { path: '/dashboard/reservations', name: 'Reservations', icon: '📅' },
-        { path: '/dashboard/staff', name: 'Staff', icon: '👥' },
-        { path: '/dashboard/inventory', name: 'Inventory', icon: '📦' },
-        { path: '/dashboard/reports', name: 'Reports', icon: '📈' },
-        { path: '/dashboard/settings', name: 'Settings', icon: '⚙️' },
+        { path: '/dashboard', name: 'Overview', icon: '📊', end: true }, // end: true added
+        { path: '/dashboard/addfood', name: 'Add-food', icon: '💳', end: true },
+        { path: '/dashboard/menu', name: 'Menu', icon: '📋', end: true },
+        { path: '/dashboard/orders', name: 'Orders', icon: '🍽️', end: true },
+        { path: '/dashboard/reservations', name: 'Reservations', icon: '📅', end: true },
+        { path: '/dashboard/staff', name: 'Staff', icon: '👥', end: true },
+        { path: '/dashboard/inventory', name: 'Inventory', icon: '📦', end: true },
+        { path: '/dashboard/reports', name: 'Reports', icon: '📈', end: true },
+        { path: '/dashboard/settings', name: 'Settings', icon: '⚙️', end: true },
     ];
 
     return (
@@ -37,7 +38,7 @@ const Dashboard = () => {
                         <span className="text-xl font-bold text-amber-600">TasteTribe</span>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white">
-                        A
+                        {user?.displayName?.charAt(0) || 'A'}
                     </div>
                 </div>
             </header>
@@ -61,6 +62,7 @@ const Dashboard = () => {
             `}>
                 {/* Restaurant Logo/Brand */}
                 <div className="p-6 border-b border-amber-100 sticky top-0 bg-gradient-to-b from-amber-50 to-white z-10">
+                   <Link to={'/'}>
                     <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
                             <span className="text-2xl">🍽️</span>
@@ -69,7 +71,7 @@ const Dashboard = () => {
                             <h1 className="text-2xl font-bold text-amber-800">TasteTribe</h1>
                             <p className="text-xs text-amber-600">Restaurant Dashboard</p>
                         </div>
-                    </div>
+                    </div></Link>
                 </div>
 
                 {/* Navigation Links */}
@@ -79,15 +81,18 @@ const Dashboard = () => {
                             <li key={item.path}>
                                 <NavLink
                                     to={item.path}
+                                    end={item.end} // end prop added
                                     onClick={() => setIsSidebarOpen(false)}
-                                    className={({ isActive }) => `
+                                    className={({ isActive }) => {
+                                        console.log(`Route ${item.path} isActive:`, isActive); // Debugging
+                                        return `
                                         flex items-center space-x-3 px-4 py-3 rounded-xl
                                         transition-all duration-200 group
                                         ${isActive
-                                            ? 'bg-amber-500 text-white shadow-lg shadow-amber-200'
-                                            : 'text-gray-600 hover:bg-amber-100 hover:text-amber-700'
-                                        }
-                                    `}
+                                                ? 'bg-amber-500 text-white shadow-lg shadow-amber-200'
+                                                : 'text-gray-600 hover:bg-amber-100 hover:text-amber-700'
+                                            }
+                                    `}}
                                 >
                                     <span className="text-xl">{item.icon}</span>
                                     <span className="font-medium">{item.name}</span>
@@ -105,22 +110,23 @@ const Dashboard = () => {
                 {/* User Profile Section */}
                 <div className="sticky bottom-0 left-0 right-0 p-4 border-t border-amber-100 bg-white/90 backdrop-blur-sm">
                     <div className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-amber-50 transition-colors cursor-pointer">
-                        <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold">
+                        <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold overflow-hidden">
                             <img
                                 src={user?.photoURL || "https://i.ibb.co/4pDNDk1/avatar.png"}
                                 alt="user"
-                               
-                                className="w-10 h-10 rounded-full cursor-pointer border-2 border-red-500"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = "https://i.ibb.co/4pDNDk1/avatar.png";
+                                }}
                             />
                         </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-700">{user?.displayName}</p>
-                            <p className="text-xs text-gray-500">Buyer</p>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-700 truncate">{user?.displayName || 'User'}</p>
+                            <p className="text-xs text-gray-500 truncate">{user?.email || 'email@example.com'}</p>
                         </div>
-                        <button className="p-2 hover:bg-amber-200 rounded-lg transition-colors">
-                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
+                        <button className="p-2 hover:bg-amber-200 rounded-lg transition-colors flex-shrink-0">
+                            <FiUser className="w-5 h-5 text-gray-600" />
                         </button>
                     </div>
                 </div>
@@ -139,7 +145,7 @@ const Dashboard = () => {
                 <div className="hidden lg:block bg-white shadow-sm sticky top-0 z-10">
                     <div className="flex items-center justify-between px-8 py-4">
                         <div className="flex items-center space-x-4">
-                            <h2 className="text-xl font-semibold text-gray-800">Welcome {user?.displayName} 👋</h2>
+                            <h2 className="text-xl font-semibold text-gray-800">Welcome {user?.displayName || 'Guest'} 👋</h2>
                         </div>
                         <div className="flex items-center space-x-4">
                             <button className="p-2 hover:bg-gray-100 rounded-lg relative">
@@ -153,12 +159,15 @@ const Dashboard = () => {
                                     <p className="text-sm font-medium text-gray-700">TasteTribe</p>
                                     <p className="text-xs text-gray-500">Main Branch</p>
                                 </div>
-                                <div className="w-16 rounded-full  flex items-center justify-center text-white font-bold">
+                                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-amber-500">
                                     <img
                                         src={user?.photoURL || "https://i.ibb.co/4pDNDk1/avatar.png"}
                                         alt="user"
-                                        
-                                        className="w-10 h-10 rounded-full cursor-pointer border-2 border-red-500"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = "https://i.ibb.co/4pDNDk1/avatar.png";
+                                        }}
                                     />
                                 </div>
                             </div>
