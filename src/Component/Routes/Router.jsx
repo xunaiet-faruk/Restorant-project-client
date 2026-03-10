@@ -14,6 +14,7 @@ import AdminOverview from "../../Dasboard/AdminOverview";
 import Addfood from "../../Dasboard/AdminDashboard/Addfood";
 import ManageFood from "../../Dasboard/AdminDashboard/ManageFood";
 import ManageOrder from "../../Dasboard/AdminDashboard/ManageOrder";
+import ManageUsers from "../../Dasboard/AdminDashboard/ManageUsers";
 
 
 const router = createBrowserRouter([
@@ -67,6 +68,10 @@ const router = createBrowserRouter([
             {
                 path:'manageorders',
                 element : <ManageOrder/>
+            },
+            {
+                path:'manageusers',
+                element : <ManageUsers/>
             }
         ]
     }
