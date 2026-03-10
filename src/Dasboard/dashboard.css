@@ -1,0 +1,197 @@
+/* dashboard.css */
+
+/* Sidebar Scrollbar Styles */
+.sidebar-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d97706 #fef3c7;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+    background: #fef3c7;
+    border-radius: 10px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: #d97706;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #b45309;
+}
+
+/* Hide scrollbar when not hovering on mobile */
+@media (max-width: 1024px) {
+    .sidebar-scrollbar {
+        scrollbar-width: none;
+    }
+
+    .sidebar-scrollbar::-webkit-scrollbar {
+        width: 0;
+        background: transparent;
+    }
+
+    /* Show scrollbar when sidebar is open and user is scrolling */
+    .sidebar-scrollbar:hover {
+        scrollbar-width: thin;
+    }
+
+    .sidebar-scrollbar:hover::-webkit-scrollbar {
+        width: 5px;
+    }
+}
+
+/* Main Content Scrollbar Styles */
+.main-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+}
+
+.main-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.main-scrollbar::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 10px;
+}
+
+.main-scrollbar::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.main-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Horizontal scrollbar for tables on small devices */
+.main-scrollbar::-webkit-scrollbar:horizontal {
+    height: 6px;
+}
+
+/* Smooth scrolling for the whole page */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Prevent body scroll when mobile menu is open */
+body.sidebar-open {
+    overflow: hidden;
+}
+
+/* Custom scrollbar for dropdowns or modals if needed */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #d97706 #fef3c7;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #fef3c7;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #d97706;
+    border-radius: 10px;
+}
+
+/* Animation for scrollbar appearance */
+@keyframes scrollbarAppear {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb,
+.main-scrollbar::-webkit-scrollbar-thumb {
+    animation: scrollbarAppear 0.3s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .main-scrollbar::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+
+    .sidebar-scrollbar::-webkit-scrollbar {
+        width: 3px;
+    }
+}
+
+/* Firefox specific styles */
+@-moz-document url-prefix() {
+    .sidebar-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #d97706 #fef3c7;
+    }
+
+    .main-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #d1d5db #f3f4f6;
+    }
+}
+
+/* Optional: Add a nice gradient effect to the scrollbar track */
+.sidebar-scrollbar::-webkit-scrollbar-track {
+    background: linear-gradient(to bottom, #fef3c7, #fffbeb);
+}
+
+/* Optional: Add a subtle glow effect on scrollbar thumb hover */
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    box-shadow: 0 0 5px rgba(217, 119, 6, 0.5);
+}
+
+.main-scrollbar::-webkit-scrollbar-thumb:hover {
+    box-shadow: 0 0 5px rgba(156, 163, 175, 0.5);
+}
+
+/* Ensure content doesn't get hidden behind the scrollbar */
+.sidebar-scrollbar {
+    padding-right: 2px;
+}
+
+/* Optional: Add a fade effect at the bottom of sidebar to indicate more content */
+.sidebar-scrollbar::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.9), transparent);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-scrollbar:hover::after {
+    opacity: 1;
+}
+
+/* Tablet specific adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .sidebar-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .main-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+}

@@ -4,74 +4,68 @@ import { AuthContext } from "../../Authentication/Provider/AuthProbider";
 import Swal from "sweetalert2";
 
 const Register = () => {
-    const [showName, setShowName] = useState({});
-    const { createUser, updateuserProfile } = useContext(AuthContext);
+    const [showName, setShowName] = useState(null);
+     const { createUser, updateuserProfile } = useContext(AuthContext);
     const navigate =useNavigate()
     const handleRegister = async (e) => {
         e.preventDefault();
+
         const form = e.target;
         const name = form.name.value;
         const email = form.email.value;
         const password = form.password.value;
         const imageFile = form.image.files[0];
-
-        // Upload image to imgbb
-        const formData = new FormData();
-        formData.append("image", imageFile);
-
-        const imgbbApiKey = "0b4acf8aaede9367b12de5e29de2e9ad"; 
+        console.log(name, email, password, imageFile);
 
         try {
+
+            // image upload
+            const formData = new FormData();
+            formData.append("image", imageFile);
+
+            const imgbbApiKey = "0b4acf8aaede9367b12de5e29de2e9ad";
+
             const imgRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
                 method: "POST",
-                body: formData,
+                body: formData
             });
 
             const imgData = await imgRes.json();
-            const imageUrl = imgData?.data?.url;
+
+            const imageUrl = imgData?.data?.display_url;
 
             if (!imageUrl) {
                 throw new Error("Image upload failed");
             }
 
-            // Now create user
-            createUser(email, password)
-                .then(result => {
-                    const Registeruser = result.user;
-                    console.log(Registeruser);
-                    if (Registeruser) {
-                        Swal.fire({
-                            position: "top-end",
-                            icon: "success",
-                            title: "Your Registration has been Success",
-                            showConfirmButton: false,
-                            timer: 1500
-                        });
-                        navigate('/')
-                    }
+            // create user
+            const result = await createUser(email, password);
 
-                    // Now update profile with name and image url
-                    updateuserProfile(name, imageUrl)
-                        .then(() => {
-                            console.log("User profile updated");
-                        })
-                        .catch(error => console.log(error));
-                })
-                .catch((error) => {
-                    console.error("Login Error:", error.message);
-                    Swal.fire({
-                        title: "Something Went Wrong",
-                        icon: "warning",
-                        draggable: true
-                    });
-                });
+            console.log("User created:", result.user);
+
+            // update profile
+            await updateuserProfile(name, imageUrl);
+
+            console.log("Profile updated");
+
+            Swal.fire({
+                icon: "success",
+                title: "Registration Successful",
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            navigate("/");
 
         } catch (error) {
-            console.error("Image upload or registration failed", error);
+
+            console.log("Register error:", error);
+
             Swal.fire({
-                title: "Image Upload Failed",
                 icon: "error",
+                title: error.message
             });
+
         }
     };
 
@@ -129,15 +123,12 @@ const Register = () => {
                                 <label htmlFor="type2-1" className="flex max-w-[380px] md:w-[380px]">
                                     <div className="w-fit whitespace-nowrap  bg-[#F4B552]  px-2 py-1 text-sm text-white">Choose File</div>
                                     <div className="flex w-full max-w-[380px] items-center  border-b-[2px] border-[#F4B552]  px-2 text-sm font-medium text-gray-400">
-                                        {showName.name ? showName.name : 'No File Chosen'}
-                                    </div>
+                                        {showName ? showName.name : "No File Chosen"}                                    </div>
                                 </label>
                                 <input
                                     onChange={(e) => {
-                                        if (e.target.files && e.target.files[0]) {
-                                            const imageFile = e.target.files[0];
-                                            setShowName(imageFile);
-                                        }
+                                        const file = e.target.files[0];
+                                        setShowName(file);
                                     }}
                                     className="hidden"
                                     type="file"

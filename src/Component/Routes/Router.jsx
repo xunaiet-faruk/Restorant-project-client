@@ -9,6 +9,8 @@ import Login from "../Identification/Login";
 import Register from "../Identification/Register";
 import Secret from "../Secret";
 import Privateroute from "./Privateroute";
+import Dashboard from "../../Dasboard/Dashboard";
+import AdminOverview from "../../Dasboard/AdminOverview";
 
 
 const router = createBrowserRouter([
@@ -43,6 +45,16 @@ const router = createBrowserRouter([
         ]
        
     },
+    {
+        path : '/dashboard',
+        element : <Dashboard/>,
+        children : [
+            {
+                path:'',
+                element : <AdminOverview/>
+            }
+        ]
+    }
 ]);
 
 export default router;

@@ -1,10 +1,11 @@
 import { useContext, useState } from 'react';
 import { useRef } from 'react';
 import { useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { AuthContext } from '../../Authentication/Provider/AuthProbider';
 const Navbar = () => {
     const [dropDownState, setDropDownState] = useState(false);
+    const [open, setOpen] = useState(false);
     const dropDownMenuRef = useRef();
     const { user, logout } = useContext(AuthContext)
 
@@ -66,16 +67,34 @@ const Navbar = () => {
                         </NavLink>                    </li>
                     {
                         user ?
-                            <li className="group flex  cursor-pointer flex-col animate-pulse hover:text-yellow-400">
-                                <NavLink 
+                            <div className="relative">
+                                {/* User Image */}
+                                <img
+                                    src={user?.photoURL || "https://i.ibb.co/4pDNDk1/avatar.png"}
+                                    alt="user"
+                                    onClick={() => setOpen(!open)}
+                                    className="w-10 h-10 rounded-full cursor-pointer border-2 border-red-500"
+                                />
 
-                                    className={({ isActive, isPending }) =>
-                                        isPending ? "pending" : isActive ? " uppercase" : ""
-                                    }
-                                >
-                                    Dashboard
-                                </NavLink>
-                            </li>
+                                {/* Dropdown */}
+                                {open && (
+                                    <div className="absolute right-0 mt-3 w-40 bg-white px-2 shadow-lg rounded-lg py-2 z-50">
+                                        <Link
+                                            to="/dashboard"
+                                            className="block px-4 py-2 hover:bg-yellow-100 rounded-lg text-black "
+                                        >
+                                            Dashboard
+                                        </Link>
+
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full text-left px-4 py-2 rounded-lg hover:bg-red-600 hover:text-white text-red-500"
+                                        >
+                                            Logout
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
 
                             :
 
