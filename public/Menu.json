@@ -1,0 +1,58 @@
+[
+    {
+        "name": "Roasted Beef",
+        "details": "It is a long established fact that a reader will be distracted.milkshake blended with ",
+        "rating": 3.1,
+        "price": 12.99,
+        "image": "https://i.ibb.co.com/Q30wJHQg/food1.jpg"
+    },
+    {
+        "name": "Chicken Bread",
+        "details": "A delicious pizza with fresh mozzarella, basil, and rich tomato sauce on a crispy crust.",
+        "rating": 4.2,
+        "price": 15.99,
+        "image": "https://i.ibb.co.com/sd9Zg9dn/food2.jpg"
+    },
+    {
+        "name": "Roasted Steak",
+        "details": "Pasta tossed in a rich and creamy Alfredo sauce with parmesan cheese and grilled chicken.",
+        "rating": 3.1,
+        "price": 13.49,
+        "image": "https://i.ibb.co.com/zHVD8fq9/food3.jpg"
+    },
+    {
+        "name": "Fish Steak",
+        "details": "Juicy beef patty loaded with melted cheese, lettuce, tomato, and house-made sauce on a toasted bun.",
+        "rating": 2.9,
+        "price": 11.99,
+        "image": "https://i.ibb.co.com/zHVD8fq9/food3.jpg"
+    },
+    {
+        "name": "Vegetable Salad",
+        "details": "Slow-cooked ribs glazed with our signature BBQ sauce, served with coleslaw and fries.",
+        "rating": 1.0,
+        "price": 19.99,
+        "image": "https://i.ibb.co.com/gbv9G0rj/food4.jpg"
+    },
+    {
+        "name": "Fresh Greek Salad",
+        "details": "A refreshing mix of cucumbers, tomatoes, feta cheese, and olives, drizzled with olive oil and herbs.",
+        "rating": 4,
+        "price": 9.99,
+        "image": "https://i.ibb.co.com/zV1SZWSK/food5.jpg"
+    },
+    {
+        "name": "Daily Fastfood",
+        "details": "Warm chocolate cake with a gooey molten center, served with a scoop of vanilla ice cream.",
+        "rating": 4.9,
+        "price": 7.99,
+        "image": "https: //i.ibb.co.com/KjtKWz3H/food5.jpg"
+    },
+    {
+        "name": "Chocolate Shake",
+        "details": "Creamy milkshake blended with fresh strawberries, topped with whipped cream and a cherry.",
+        "rating": 4.7,
+        "price": 5.99,
+        "image": "https://i.ibb.co.com/whGvStX4/food7.jpg"
+    }
+]

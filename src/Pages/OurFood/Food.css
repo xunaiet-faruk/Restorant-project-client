@@ -1,0 +1,20 @@
+/* Remove tab list border */
+.react-tabs__tab-list {
+    border: none !important;
+}
+
+/* Remove tab border */
+.react-tabs__tab {
+    border: none !important;
+    outline: none !important;
+}
+
+/* Remove selected tab border */
+.react-tabs__tab--selected {
+    border: none !important;
+}
+
+.react-tabs__tab--selected {
+    color: #FACC15 !important;
+    font-weight: bold !important;
+}
