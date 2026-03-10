@@ -11,8 +11,8 @@ const Dashboard = () => {
 
     const navigationItems = [
         { path: '/dashboard', name: 'Overview', icon: '📊', end: true }, // end: true added
-        { path: '/dashboard/addfood', name: 'Add-food', icon: '💳', end: true },
-        { path: '/dashboard/menu', name: 'Menu', icon: '📋', end: true },
+        { path: '/dashboard/addfood', name: 'Add-Food', icon: '💳', end: true },
+        { path: '/dashboard/manageFood', name: 'Manage-Food', icon: '📋', end: true },
         { path: '/dashboard/orders', name: 'Orders', icon: '🍽️', end: true },
         { path: '/dashboard/reservations', name: 'Reservations', icon: '📅', end: true },
         { path: '/dashboard/staff', name: 'Staff', icon: '👥', end: true },

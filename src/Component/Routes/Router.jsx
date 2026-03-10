@@ -12,6 +12,7 @@ import Privateroute from "./Privateroute";
 import Dashboard from "../../Dasboard/Dashboard";
 import AdminOverview from "../../Dasboard/AdminOverview";
 import Addfood from "../../Dasboard/AdminDashboard/Addfood";
+import ManageFood from "../../Dasboard/AdminDashboard/ManageFood";
 
 
 const router = createBrowserRouter([
@@ -57,6 +58,10 @@ const router = createBrowserRouter([
             {
                 path:'addfood',
                 element : <Addfood/>
+            },
+            {
+                path:'manageFood',
+                element : <ManageFood/>
             }
         ]
     }
