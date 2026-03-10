@@ -13,7 +13,7 @@ const Dashboard = () => {
         { path: '/dashboard', name: 'Overview', icon: '📊', end: true }, // end: true added
         { path: '/dashboard/addfood', name: 'Add-Food', icon: '💳', end: true },
         { path: '/dashboard/manageFood', name: 'Manage-Food', icon: '📋', end: true },
-        { path: '/dashboard/orders', name: 'Orders', icon: '🍽️', end: true },
+        { path: '/dashboard/manageorders', name: 'Manage-Orders', icon: '🍽️', end: true },
         { path: '/dashboard/reservations', name: 'Reservations', icon: '📅', end: true },
         { path: '/dashboard/staff', name: 'Staff', icon: '👥', end: true },
         { path: '/dashboard/inventory', name: 'Inventory', icon: '📦', end: true },
