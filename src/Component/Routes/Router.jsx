@@ -15,6 +15,10 @@ import Addfood from "../../Dasboard/AdminDashboard/Addfood";
 import ManageFood from "../../Dasboard/AdminDashboard/ManageFood";
 import ManageOrder from "../../Dasboard/AdminDashboard/ManageOrder";
 import ManageUsers from "../../Dasboard/AdminDashboard/ManageUsers";
+import UserHome from "../../Dasboard/UserDashboard/UserHome";
+import UserProfile from "../../Dasboard/UserDashboard/UserProfile";
+import MyOrders from "../../Dasboard/UserDashboard/MyOrders";
+import PaymentHistory from "../../Dasboard/UserDashboard/PaymentHistory";
 
 
 const router = createBrowserRouter([
@@ -72,6 +76,22 @@ const router = createBrowserRouter([
             {
                 path:'manageusers',
                 element : <ManageUsers/>
+            },
+            {
+                path:'userHome',
+                element : <UserHome/>
+            },
+            {
+                path:'userProfile',
+                element : <UserProfile/>
+            },
+            {
+                path:'myorders',
+                element : <MyOrders/>
+            },
+            {
+                path:'payment-history',
+                element : <PaymentHistory/>
             }
         ]
     }

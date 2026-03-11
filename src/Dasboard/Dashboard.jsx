@@ -14,11 +14,11 @@ const Dashboard = () => {
         { path: '/dashboard/addfood', name: 'Add-Food', icon: '💳', end: true },
         { path: '/dashboard/manageFood', name: 'Manage-Food', icon: '📋', end: true },
         { path: '/dashboard/manageorders', name: 'Manage-Orders', icon: '🍽️', end: true },
-        { path: '/dashboard/manageusers', name: 'Manage-Users', icon: '📅', end: true },
-        { path: '/dashboard/staff', name: 'Staff', icon: '👥', end: true },
-        { path: '/dashboard/inventory', name: 'Inventory', icon: '📦', end: true },
-        { path: '/dashboard/reports', name: 'Reports', icon: '📈', end: true },
-        { path: '/dashboard/settings', name: 'Settings', icon: '⚙️', end: true },
+        { path: '/dashboard/manageusers', name: 'Manage-Users', icon: '👥', end: true },
+        { path: '/dashboard/userHome', name: 'User-Home', icon: '👥', end: true },
+        { path: '/dashboard/userProfile', name: 'Your-Profile', icon: '📦', end: true },
+        { path: '/dashboard/myorders', name: 'My-Orders', icon: '📈', end: true },
+        { path: '/dashboard/payment-history', name: 'Payment-History', icon: '⚙️', end: true },
     ];
 
     return (
