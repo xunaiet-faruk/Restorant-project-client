@@ -14,6 +14,7 @@ const Food = () => {
     const pizzaFood = popular.filter(item => item.category === "pizza")
     const drinksFood = popular.filter(item => item.category === "drinks")
 
+    
     return (
         <div>
               <Sharebanner img={image}/>
