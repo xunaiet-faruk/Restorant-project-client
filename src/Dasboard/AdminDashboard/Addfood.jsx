@@ -11,6 +11,7 @@ import {
 } from 'react-icons/fi';
 import UseAxios from '../../Hooks/UseAxios';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 const Addfood = () => {
     const axiosInstance = UseAxios();
@@ -97,7 +98,15 @@ const Addfood = () => {
             const response = await axiosInstance.post('/Addfood', foodData);
 
             console.log('Food added:', response.data);
-            alert('Food item added successfully!');
+            if (response.data.insertedId){
+                Swal.fire({
+                    position: "top",
+                    icon: "success",
+                    title: "Your New Food has been Post",
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
 
             // Reset form
             setFormData({

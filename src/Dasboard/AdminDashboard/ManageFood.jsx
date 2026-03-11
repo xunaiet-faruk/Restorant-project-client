@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     FiEdit2,
     FiTrash2,
@@ -13,6 +13,8 @@ import {
     FiClock,
     FiTrendingUp
 } from 'react-icons/fi';
+import UseAxios from '../../Hooks/UseAxios';
+import Swal from 'sweetalert2';
 
 const ManageFood = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -20,142 +22,21 @@ const ManageFood = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedItems, setSelectedItems] = useState([]);
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-    const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+    const [viewMode, setViewMode] = useState('table');
+    const [foods, setFoods] = useState([]) 
+    const axios =UseAxios();
     const itemsPerPage = 8;
 
-    // Sample food data - replace with your actual data
-    const [foods, setFoods] = useState([
-        {
-            id: 1,
-            name: 'Grilled Chicken Burger',
-            category: 'Fast Food',
-            price: 450,
-            discount: 10,
-            image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=100&h=100&fit=crop',
-            status: 'available',
-            rating: 4.5,
-            orders: 156,
-            recipe: 'Juicy grilled chicken patty with fresh lettuce, tomato, and special sauce',
-            createdAt: '2024-01-15'
-        },
-        {
-            id: 2,
-            name: 'Margherita Pizza',
-            category: 'Main Course',
-            price: 650,
-            discount: 0,
-            image: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=100&h=100&fit=crop',
-            status: 'available',
-            rating: 4.8,
-            orders: 203,
-            recipe: 'Classic Italian pizza with fresh mozzarella, tomatoes, and basil',
-            createdAt: '2024-01-20'
-        },
-        {
-            id: 3,
-            name: 'Caesar Salad',
-            category: 'Appetizers',
-            price: 320,
-            discount: 15,
-            image: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=100&h=100&fit=crop',
-            status: 'available',
-            rating: 4.2,
-            orders: 98,
-            recipe: 'Fresh romaine lettuce with Caesar dressing, croutons, and parmesan',
-            createdAt: '2024-02-01'
-        },
-        {
-            id: 4,
-            name: 'Chocolate Brownie',
-            category: 'Desserts',
-            price: 280,
-            discount: 0,
-            image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=100&h=100&fit=crop',
-            status: 'out-of-stock',
-            rating: 4.6,
-            orders: 87,
-            recipe: 'Warm chocolate brownie with vanilla ice cream and chocolate sauce',
-            createdAt: '2024-02-10'
-        },
-        {
-            id: 5,
-            name: 'Iced Caramel Latte',
-            category: 'Beverages',
-            price: 220,
-            discount: 5,
-            image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=100&h=100&fit=crop',
-            status: 'available',
-            rating: 4.4,
-            orders: 145,
-            recipe: 'Espresso with caramel syrup, milk, and ice topped with whipped cream',
-            createdAt: '2024-02-15'
-        },
-        {
-            id: 6,
-            name: 'Grilled Salmon',
-            category: 'Seafood',
-            price: 850,
-            discount: 0,
-            image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=100&h=100&fit=crop',
-            status: 'available',
-            rating: 4.9,
-            orders: 67,
-            recipe: 'Fresh salmon grilled to perfection with lemon butter sauce',
-            createdAt: '2024-02-20'
-        },
-        {
-            id: 7,
-            name: 'Vegetable Spring Rolls',
-            category: 'Appetizers',
-            price: 180,
-            discount: 0,
-            image: 'https://images.unsplash.com/photo-1541696432-82c6da8ce7bf?w=100&h=100&fit=crop',
-            status: 'available',
-            rating: 4.3,
-            orders: 112,
-            recipe: 'Crispy spring rolls filled with fresh vegetables and served with sweet chili sauce',
-            createdAt: '2024-02-25'
-        },
-        {
-            id: 8,
-            name: 'Beef Steak',
-            category: 'Main Course',
-            price: 1200,
-            discount: 20,
-            image: 'https://images.unsplash.com/photo-1600891964092-4316c288032e?w=100&h=100&fit=crop',
-            status: 'available',
-            rating: 4.7,
-            orders: 89,
-            recipe: 'Premium beef steak cooked to your preference with mushroom sauce',
-            createdAt: '2024-03-01'
-        },
-        {
-            id: 9,
-            name: 'Mango Smoothie',
-            category: 'Beverages',
-            price: 180,
-            discount: 0,
-            image: 'https://images.unsplash.com/photo-1622597467836-f3c413e1b847?w=100&h=100&fit=crop',
-            status: 'available',
-            rating: 4.5,
-            orders: 134,
-            recipe: 'Fresh mango blended with yogurt and honey',
-            createdAt: '2024-03-05'
-        },
-        {
-            id: 10,
-            name: 'Pad Thai',
-            category: 'Main Course',
-            price: 380,
-            discount: 10,
-            image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=100&h=100&fit=crop',
-            status: 'available',
-            rating: 4.6,
-            orders: 178,
-            recipe: 'Thai-style stir-fried rice noodles with eggs, tofu, and peanuts',
-            createdAt: '2024-03-08'
+    useEffect(() =>{
+        const ManageAlldata =async()=>{
+          const result =  await axios.get('/Allfood')
+            console.log(result.data);
+            setFoods(result.data)
         }
-    ]);
+        ManageAlldata()
+    },[axios])
+
+   
 
     const categories = ['all', ...new Set(foods.map(food => food.category))];
 
@@ -216,10 +97,33 @@ const ManageFood = () => {
     };
 
     // Handle delete
-    const handleDelete = (id) => {
-        if (window.confirm('Are you sure you want to delete this item?')) {
-            setFoods(prev => prev.filter(food => food.id !== id));
-            setSelectedItems(prev => prev.filter(item => item !== id));
+
+    const handleDelete = async (id) => {
+
+        const result = await Swal.fire({
+            title: "Are you sure?",
+            text: "This food will be deleted!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!"
+        });
+
+        if (result.isConfirmed) {
+
+            const response = await axios.delete(`/Allfood/${id}`);
+
+            if (response.data.deletedCount > 0) {
+
+                Swal.fire(
+                    "Deleted!",
+                    "Food has been deleted.",
+                    "success"
+                );
+
+                setFoods(prev => prev.filter(food => food._id !== id));
+            }
         }
     };
 
@@ -462,7 +366,7 @@ const ManageFood = () => {
                                                     <FiEdit2 className="w-4 h-4 text-amber-500 group-hover:text-amber-600" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(food.id)}
+                                                    onClick={() => handleDelete(food._id)}
                                                     className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
                                                     title="Delete"
                                                 >
@@ -527,11 +431,7 @@ const ManageFood = () => {
                                         {food.status === 'available' ? 'Available' : 'Out of Stock'}
                                     </span>
                                 </div>
-                                {food.discount > 0 && (
-                                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                                        {food.discount}% OFF
-                                    </div>
-                                )}
+                               
                             </div>
 
                             <div className="p-4">
