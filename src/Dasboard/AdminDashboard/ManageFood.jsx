@@ -17,6 +17,7 @@ import UseAxios from '../../Hooks/UseAxios';
 import Swal from 'sweetalert2';
 import FoodDetailsModal from './FoodDetailsModal';
 import FoodEdit from './FoodEdit';
+import { Link } from 'react-router-dom';
 
 
 const ManageFood = () => {
@@ -95,21 +96,8 @@ const ManageFood = () => {
         }));
     };
 
-    // Handle select all
-    const handleSelectAll = (e) => {
-        if (e.target.checked) {
-            setSelectedItems(paginatedFoods.map(food => food._id));
-        } else {
-            setSelectedItems([]);
-        }
-    };
 
-    // Handle select single
-    const handleSelectItem = (id) => {
-        setSelectedItems(prev =>
-            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-        );
-    };
+  
 
     // Handle delete
     const handleDelete = async (id) => {
@@ -137,37 +125,7 @@ const ManageFood = () => {
         }
     };
 
-    // Handle bulk delete
-    const handleBulkDelete = async () => {
-        if (selectedItems.length === 0) return;
-
-        const result = await Swal.fire({
-            title: `Delete ${selectedItems.length} items?`,
-            text: "This action cannot be undone!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Yes, delete all!"
-        });
-
-        if (result.isConfirmed) {
-            try {
-                // Delete one by one (you can also create a bulk delete API)
-                for (const id of selectedItems) {
-                    await axios.delete(`/Allfood/${id}`);
-                }
-
-                setFoods(prev => prev.filter(food => !selectedItems.includes(food._id)));
-                setSelectedItems([]);
-
-                Swal.fire("Deleted!", `${selectedItems.length} items deleted.`, "success");
-            } catch (error) {
-                console.error("Bulk delete error:", error);
-                Swal.fire("Error!", "Failed to delete items.", "error");
-            }
-        }
-    };
+   
 
     // View food
     const handleViewFood = (food) => {
@@ -253,10 +211,11 @@ const ManageFood = () => {
                 {/* View Toggle and Actions */}
                 <div className="flex items-center gap-2">
                     {/* Add New Button */}
-                    <button className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors flex items-center gap-2">
-                        <FiPlus className="w-4 h-4" />
-                        <span>Add New</span>
-                    </button>
+                    <Link to={'/dashboard/addfood'}>
+                        <button className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors flex items-center gap-2">
+                            <FiPlus className="w-4 h-4" />
+                            <span>Add New</span>
+                        </button></Link>
 
                     {/* View Mode Toggle */}
                     <div className="bg-white rounded-lg p-1 shadow-sm border border-gray-200">
@@ -280,10 +239,7 @@ const ManageFood = () => {
                         </button>
                     </div>
 
-                    {/* Export Button */}
-                    <button className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                        <FiDownload className="w-5 h-5 text-gray-600" />
-                    </button>
+                  
                 </div>
             </div>
 
@@ -312,16 +268,7 @@ const ManageFood = () => {
                             </option>
                         ))}
                     </select>
-
-                    {selectedItems.length > 0 && (
-                        <button
-                            onClick={handleBulkDelete}
-                            className="px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
-                        >
-                            <FiTrash2 className="w-4 h-4" />
-                            <span>Delete ({selectedItems.length})</span>
-                        </button>
-                    )}
+ 
                 </div>
             </div>
 
@@ -336,7 +283,7 @@ const ManageFood = () => {
                                         <input
                                             type="checkbox"
                                             checked={selectedItems.length === paginatedFoods.length && paginatedFoods.length > 0}
-                                            onChange={handleSelectAll}
+                                            
                                             className="w-4 h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500"
                                         />
                                     </th>
@@ -387,7 +334,7 @@ const ManageFood = () => {
                                             <input
                                                 type="checkbox"
                                                 checked={selectedItems.includes(food._id)}
-                                                onChange={() => handleSelectItem(food._id)}
+                                                
                                                 className="w-4 h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500"
                                             />
                                         </td>
@@ -527,7 +474,7 @@ const ManageFood = () => {
                                     <input
                                         type="checkbox"
                                         checked={selectedItems.includes(food._id)}
-                                        onChange={() => handleSelectItem(food._id)}
+                                      
                                         className="w-4 h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500"
                                     />
                                 </div>

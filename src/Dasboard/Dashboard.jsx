@@ -84,7 +84,6 @@ const Dashboard = () => {
                                     end={item.end} // end prop added
                                     onClick={() => setIsSidebarOpen(false)}
                                     className={({ isActive }) => {
-                                        console.log(`Route ${item.path} isActive:`, isActive); // Debugging
                                         return `
                                         flex items-center space-x-3 px-4 py-3 rounded-xl
                                         transition-all duration-200 group

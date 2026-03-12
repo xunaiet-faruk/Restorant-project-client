@@ -2,9 +2,11 @@ import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../Authentication/Provider/AuthProbider";
 import Swal from "sweetalert2";
+import UseAxios from "../../Hooks/UseAxios";
 
 const Register = () => {
     const [showName, setShowName] = useState(null);
+    const axios =UseAxios()
      const { createUser, updateuserProfile } = useContext(AuthContext);
     const navigate =useNavigate()
     const handleRegister = async (e) => {
@@ -15,7 +17,7 @@ const Register = () => {
         const email = form.email.value;
         const password = form.password.value;
         const imageFile = form.image.files[0];
-        console.log(name, email, password, imageFile);
+       
 
         try {
 
@@ -38,24 +40,32 @@ const Register = () => {
                 throw new Error("Image upload failed");
             }
 
-            // create user
             const result = await createUser(email, password);
 
-            console.log("User created:", result.user);
-
-            // update profile
             await updateuserProfile(name, imageUrl);
 
-            console.log("Profile updated");
+            const userData = {
+                name,
+                email,
+                image: imageUrl,
+                role: "user",
+                createdAt: new Date()
+            };
+            
 
-            Swal.fire({
-                icon: "success",
-                title: "Registration Successful",
-                timer: 1500,
-                showConfirmButton: false
-            });
+            const res = await axios.post('/register', userData);
 
-            navigate("/");
+            if (res.data.insertedId) {
+
+                Swal.fire({
+                    icon: "success",
+                    title: "Registration Successful",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                navigate("/");
+            }
 
         } catch (error) {
 
@@ -67,6 +77,8 @@ const Register = () => {
             });
 
         }
+      
+    
     };
 
     return (

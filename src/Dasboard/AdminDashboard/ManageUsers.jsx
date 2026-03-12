@@ -1,98 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FiUser, FiMail, FiShield, FiTrash2, FiEye, FiStar, FiSearch, FiFilter, FiMoreVertical } from 'react-icons/fi';
+import UseAxios from '../../Hooks/UseAxios';
+import Swal from 'sweetalert2';
 
 const ManageUsers = () => {
-    const [users, setUsers] = useState([
-        {
-            id: 1,
-            name: 'Faruk Hossain',
-            email: 'faruk.hossain@example.com',
-            role: 'Admin',
-            status: 'Active',
-            joinDate: '2024-01-15',
-            avatar: 'https://i.pravatar.cc/150?img=1',
-            orders: 45,
-            totalSpent: 24500
-        },
-        {
-            id: 2,
-            name: 'Rima Akter',
-            email: 'rima.akter@example.com',
-            role: 'User',
-            status: 'Active',
-            joinDate: '2024-02-20',
-            avatar: 'https://i.pravatar.cc/150?img=2',
-            orders: 12,
-            totalSpent: 5600
-        },
-        {
-            id: 3,
-            name: 'Shahin Alam',
-            email: 'shahin.alam@example.com',
-            role: 'User',
-            status: 'Active',
-            joinDate: '2024-02-10',
-            avatar: 'https://i.pravatar.cc/150?img=3',
-            orders: 8,
-            totalSpent: 3200
-        },
-        {
-            id: 4,
-            name: 'Nusrat Jahan',
-            email: 'nusrat.jahan@example.com',
-            role: 'Moderator',
-            status: 'Active',
-            joinDate: '2024-01-05',
-            avatar: 'https://i.pravatar.cc/150?img=4',
-            orders: 23,
-            totalSpent: 12800
-        },
-        {
-            id: 5,
-            name: 'Rafiq Islam',
-            email: 'rafiq.islam@example.com',
-            role: 'User',
-            status: 'Blocked',
-            joinDate: '2024-02-28',
-            avatar: 'https://i.pravatar.cc/150?img=5',
-            orders: 3,
-            totalSpent: 950
-        },
-        {
-            id: 6,
-            name: 'Salma Begum',
-            email: 'salma.begum@example.com',
-            role: 'User',
-            status: 'Active',
-            joinDate: '2024-03-01',
-            avatar: 'https://i.pravatar.cc/150?img=6',
-            orders: 5,
-            totalSpent: 2100
-        },
-        {
-            id: 7,
-            name: 'Kamal Hossain',
-            email: 'kamal.hossain@example.com',
-            role: 'Moderator',
-            status: 'Active',
-            joinDate: '2024-01-20',
-            avatar: 'https://i.pravatar.cc/150?img=7',
-            orders: 31,
-            totalSpent: 15600
-        },
-        {
-            id: 8,
-            name: 'Jhorna Akter',
-            email: 'jhorna.akter@example.com',
-            role: 'User',
-            status: 'Blocked',
-            joinDate: '2024-02-15',
-            avatar: 'https://i.pravatar.cc/150?img=8',
-            orders: 2,
-            totalSpent: 650
-        }
-    ]);
-
+    const axios = UseAxios()
+    const [users, setUsers] = useState([])
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -108,17 +22,106 @@ const ManageUsers = () => {
         return matchesSearch && matchesRole && matchesStatus;
     });
 
+    useEffect(() => {
+
+        const UserInfo = async () => {
+            try {
+                const result = await axios.get('/register')
+                console.log(result.data);
+                setUsers(result.data)
+            } catch (error) {
+                console.log(error);
+            }
+        }
+        UserInfo()
+
+    }, [axios])
+
     // Handle make admin
-    const handleMakeAdmin = (userId) => {
-        setUsers(users.map(user =>
-            user.id === userId ? { ...user, role: 'Admin' } : user
-        ));
+    
+    const handleMakeAdmin = async (userId) => {
+        try {
+            
+            const result = await Swal.fire({
+                title: 'Make Admin?',
+                text: "This user will have admin privileges!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#8b5cf6', 
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, make admin!'
+            });
+
+            if (result.isConfirmed) {
+
+                Swal.fire({
+                    title: 'Updating...',
+                    text: 'Please wait',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const response = await axios.put(`/register/${userId}`, {
+                    role: 'Admin'
+                });
+
+                console.log("Make admin response:", response.data);
+
+                if (response.data.success || response.data.modifiedCount > 0) {
+                    // Update local state
+                    setUsers(prevUsers =>
+                        prevUsers.map(user =>
+                            user._id === userId
+                                ? { ...user, role: 'Admin' }
+                                : user
+                        )
+                    );
+
+                    // Also update selectedUser if modal is open
+                    if (selectedUser && selectedUser._id === userId) {
+                        setSelectedUser(prev => ({ ...prev, role: 'Admin' }));
+                    }
+
+                    // Show success message
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success!',
+                        text: 'User is now an admin',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: response.data.message || 'Failed to make user admin'
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Make admin error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: error.response?.data?.message || 'Failed to make user admin'
+            });
+        }
     };
 
     // Handle remove user
-    const handleRemoveUser = (userId) => {
-        if (window.confirm('Are you sure you want to remove this user?')) {
-            setUsers(users.filter(user => user.id !== userId));
+    const handleRemoveUser = async (userId) => {
+        const result = await axios.delete(`/register/${userId}`)
+        console.log(result.data);
+        if (result.data.deletedCount) {
+            Swal.fire({
+                icon: "success",
+                title: "Registration Successful",
+                timer: 1500,
+                showConfirmButton: false
+            });
+            setUsers(prev => prev.filter(user => user._id !== userId));
         }
     };
 
@@ -140,12 +143,7 @@ const ManageUsers = () => {
         }
     };
 
-    // Get status badge color
-    const getStatusBadge = (status) => {
-        return status === 'Active'
-            ? 'bg-green-100 text-green-600 border-green-200'
-            : 'bg-red-100 text-red-600 border-red-200';
-    };
+  
 
     // Stats
     const totalUsers = users.length;
@@ -209,8 +207,6 @@ const ManageUsers = () => {
                 </div>
             </div>
 
-         
-
             {/* Users Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
@@ -220,9 +216,7 @@ const ManageUsers = () => {
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">User</th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Role</th>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Join Date</th>
-                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Orders</th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
                             </tr>
                         </thead>
@@ -232,13 +226,13 @@ const ManageUsers = () => {
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <img
-                                                src={user.avatar}
+                                                src={user?.image}
                                                 alt={user.name}
                                                 className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
                                             />
                                             <div>
                                                 <p className="font-medium text-gray-800">{user.name}</p>
-                                                <p className="text-xs text-gray-500">ID: #{user.id}</p>
+                                                <p className="text-xs text-gray-500">ID: #{user._id}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -250,20 +244,14 @@ const ManageUsers = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadge(user.role)}`}>
-                                            {user.role}
+                                            {user?.role}
                                         </span>
                                     </td>
+
                                     <td className="px-6 py-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(user.status)}`}>
-                                            {user.status}
-                                        </span>
+                                        <span className="text-sm text-gray-600">{user?.createdAt}</span>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-sm text-gray-600">{user.joinDate}</span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="text-sm font-medium text-gray-800">{user.orders}</span>
-                                    </td>
+
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2">
                                             {/* View Profile */}
@@ -275,20 +263,12 @@ const ManageUsers = () => {
                                                 <FiEye className="w-4 h-4 text-blue-500 group-hover:text-blue-600" />
                                             </button>
 
-                                            {/* Make Admin - Show only if not already admin */}
-                                            {user.role !== 'Admin' && (
-                                                <button
-                                                    onClick={() => handleMakeAdmin(user.id)}
-                                                    className="p-2 hover:bg-purple-50 rounded-lg transition-colors group"
-                                                    title="Make Admin"
-                                                >
-                                                    <FiShield className="w-4 h-4 text-purple-500 group-hover:text-purple-600" />
-                                                </button>
-                                            )}
+                                          
+
 
                                             {/* Remove User */}
                                             <button
-                                                onClick={() => handleRemoveUser(user.id)}
+                                                onClick={() => handleRemoveUser(user._id)}
                                                 className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
                                                 title="Remove User"
                                             >
@@ -302,7 +282,7 @@ const ManageUsers = () => {
                     </table>
                 </div>
 
-               
+
             </div>
 
             {/* View Profile Modal */}
@@ -323,7 +303,7 @@ const ManageUsers = () => {
                             {/* Profile Header */}
                             <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
                                 <img
-                                    src={selectedUser.avatar}
+                                    src={selectedUser.image}
                                     alt={selectedUser.name}
                                     className="w-24 h-24 rounded-full object-cover border-4 border-amber-200"
                                 />
@@ -334,9 +314,8 @@ const ManageUsers = () => {
                                         <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadge(selectedUser.role)}`}>
                                             {selectedUser.role}
                                         </span>
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(selectedUser.status)}`}>
-                                            {selectedUser.status}
-                                        </span>
+                                       
+                                    
                                     </div>
                                 </div>
                             </div>
@@ -344,15 +323,15 @@ const ManageUsers = () => {
                             {/* User Stats */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                                 <div className="bg-gray-50 p-4 rounded-xl text-center">
-                                    <p className="text-2xl font-bold text-gray-800">{selectedUser.orders}</p>
+                                    <p className="text-sm  text-gray-800">12{selectedUser.orders}</p>
                                     <p className="text-xs text-gray-500">Total Orders</p>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-xl text-center">
-                                    <p className="text-2xl font-bold text-gray-800">৳{selectedUser.totalSpent}</p>
+                                    <p className="text-sm  text-gray-800">৳ 450</p>
                                     <p className="text-xs text-gray-500">Total Spent</p>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-xl text-center">
-                                    <p className="text-2xl font-bold text-gray-800">{selectedUser.joinDate}</p>
+                                    <p className="text-sm  text-gray-800">{selectedUser?.createdAt}</p>
                                     <p className="text-xs text-gray-500">Join Date</p>
                                 </div>
                             </div>
@@ -378,11 +357,11 @@ const ManageUsers = () => {
 
                             {/* Action Buttons */}
                             <div className="flex gap-3 mt-6">
+                              
                                 {selectedUser.role !== 'Admin' && (
                                     <button
                                         onClick={() => {
-                                            handleMakeAdmin(selectedUser.id);
-                                            setShowProfileModal(false);
+                                            handleMakeAdmin(selectedUser._id);
                                         }}
                                         className="flex-1 bg-purple-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2"
                                     >
@@ -390,16 +369,7 @@ const ManageUsers = () => {
                                         Make Admin
                                     </button>
                                 )}
-                                <button
-                                    onClick={() => {
-                                        handleRemoveUser(selectedUser.id);
-                                        setShowProfileModal(false);
-                                    }}
-                                    className="flex-1 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <FiTrash2 className="w-4 h-4" />
-                                    Remove User
-                                </button>
+                               
                             </div>
                         </div>
                     </div>
