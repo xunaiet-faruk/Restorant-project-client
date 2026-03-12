@@ -8,44 +8,57 @@ import {
     FiDownload,
     FiChevronLeft,
     FiChevronRight,
-    FiMoreVertical,
     FiStar,
     FiClock,
-    FiTrendingUp
+    FiTrendingUp,
+    FiPlus
 } from 'react-icons/fi';
 import UseAxios from '../../Hooks/UseAxios';
 import Swal from 'sweetalert2';
 import FoodDetailsModal from './FoodDetailsModal';
+import FoodEdit from './FoodEdit';
 
 
 const ManageFood = () => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedFood, setSelectedFood] = useState(null); // selectedOrder থেকে selectedFood
-    const [showModal, setShowModal] = useState(false);
+    const [selectedFood, setSelectedFood] = useState(null);
+    const [editingFood, setEditingFood] = useState(null);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedItems, setSelectedItems] = useState([]);
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
     const [viewMode, setViewMode] = useState('table');
-    const [foods, setFoods] = useState([])
+    const [foods, setFoods] = useState([]);
     const axios = UseAxios();
     const itemsPerPage = 8;
 
+    // Fetch all foods
     useEffect(() => {
-        const ManageAlldata = async () => {
-            const result = await axios.get('/Allfood')
-            console.log(result.data);
-            setFoods(result.data)
-        }
-        ManageAlldata()
-    }, [axios])
+        const fetchFoods = async () => {
+            try {
+                const result = await axios.get('/Allfood');
+                console.log("Fetched foods:", result.data);
+                setFoods(result.data);
+            } catch (error) {
+                console.error("Error fetching foods:", error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Failed to load food items'
+                });
+            }
+        };
+        fetchFoods();
+    }, [axios]);
 
     const categories = ['all', ...new Set(foods.map(food => food.category))];
 
     // Filter foods based on search and category
     const filteredFoods = foods.filter(food => {
-        const matchesSearch = food.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            food.recipe.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = food.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            food.recipe?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = selectedCategory === 'all' || food.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
@@ -85,7 +98,7 @@ const ManageFood = () => {
     // Handle select all
     const handleSelectAll = (e) => {
         if (e.target.checked) {
-            setSelectedItems(paginatedFoods.map(food => food._id)); // id থেকে _id
+            setSelectedItems(paginatedFoods.map(food => food._id));
         } else {
             setSelectedItems([]);
         }
@@ -111,40 +124,107 @@ const ManageFood = () => {
         });
 
         if (result.isConfirmed) {
-            const response = await axios.delete(`/Allfood/${id}`);
-            if (response.data.deletedCount > 0) {
-                Swal.fire("Deleted!", "Food has been deleted.", "success");
-                setFoods(prev => prev.filter(food => food._id !== id));
+            try {
+                const response = await axios.delete(`/Allfood/${id}`);
+                if (response.data.deletedCount > 0) {
+                    Swal.fire("Deleted!", "Food has been deleted.", "success");
+                    setFoods(prev => prev.filter(food => food._id !== id));
+                }
+            } catch (error) {
+                console.error("Delete error:", error);
+                Swal.fire("Error!", "Failed to delete food.", "error");
             }
         }
     };
 
     // Handle bulk delete
-    const handleBulkDelete = () => {
+    const handleBulkDelete = async () => {
         if (selectedItems.length === 0) return;
-        if (window.confirm(`Are you sure you want to delete ${selectedItems.length} items?`)) {
-            setFoods(prev => prev.filter(food => !selectedItems.includes(food._id)));
-            setSelectedItems([]);
+
+        const result = await Swal.fire({
+            title: `Delete ${selectedItems.length} items?`,
+            text: "This action cannot be undone!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete all!"
+        });
+
+        if (result.isConfirmed) {
+            try {
+                // Delete one by one (you can also create a bulk delete API)
+                for (const id of selectedItems) {
+                    await axios.delete(`/Allfood/${id}`);
+                }
+
+                setFoods(prev => prev.filter(food => !selectedItems.includes(food._id)));
+                setSelectedItems([]);
+
+                Swal.fire("Deleted!", `${selectedItems.length} items deleted.`, "success");
+            } catch (error) {
+                console.error("Bulk delete error:", error);
+                Swal.fire("Error!", "Failed to delete items.", "error");
+            }
         }
     };
 
-    // Handle edit
-    const handleEdit = (food) => {
-        console.log('Edit food:', food);
-    };
-
-    // view food - ফিক্সড
+    // View food
     const handleViewFood = (food) => {
-        console.log("View button clicked for food:", food);
-        setSelectedFood(food); // selectedOrder এর পরিবর্তে selectedFood
-        setShowModal(true);
+        console.log("Viewing food:", food);
+        setSelectedFood(food);
+        setShowViewModal(true);
     };
 
-    // close modal
-    const handleCloseModal = () => {
-        console.log("Closing modal");
-        setShowModal(false);
+   
+    const handleEditFood = (food) => {
+        console.log("Editing food:", food);
+        setEditingFood(food);
+        setShowEditModal(true);
+    };
+
+    // Save edited food
+    const handleSaveEdit = async (updatedData) => {
+        try {
+            console.log("Saving updated data:", updatedData);
+
+            const response = await axios.put(`/Allfood/${editingFood._id}`, updatedData);
+
+            if (response.status === 200 || response.status === 201) {
+                setFoods(prev =>
+                    prev.map(f => f._id === editingFood._id ? { ...f, ...updatedData } : f)
+                );
+
+                setShowEditModal(false);
+                setEditingFood(null);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Updated!',
+                    text: 'Food item updated successfully',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        } catch (error) {
+            console.error("Update error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: error.response?.data?.message || 'Failed to update food item'
+            });
+        }
+    };
+
+    // Close modals
+    const handleCloseViewModal = () => {
+        setShowViewModal(false);
         setSelectedFood(null);
+    };
+
+    const handleCloseEditModal = () => {
+        setShowEditModal(false);
+        setEditingFood(null);
     };
 
     // Get status badge color
@@ -160,7 +240,7 @@ const ManageFood = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-6">
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -172,6 +252,12 @@ const ManageFood = () => {
 
                 {/* View Toggle and Actions */}
                 <div className="flex items-center gap-2">
+                    {/* Add New Button */}
+                    <button className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors flex items-center gap-2">
+                        <FiPlus className="w-4 h-4" />
+                        <span>Add New</span>
+                    </button>
+
                     {/* View Mode Toggle */}
                     <div className="bg-white rounded-lg p-1 shadow-sm border border-gray-200">
                         <button
@@ -351,25 +437,25 @@ const ManageFood = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <button
-                                                    onClick={() => handleViewFood(food)} 
-                                                    className="p-2"
+                                                    onClick={() => handleViewFood(food)}
+                                                    className="p-2 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
                                                     title="View Details"
                                                 >
                                                     <FiEye className="text-blue-600" />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleEdit(food)}
-                                                    className="p-2 hover:bg-amber-50 rounded-lg transition-colors group"
+                                                    onClick={() => handleEditFood(food)}
+                                                    className="p-2 bg-amber-100 rounded hover:bg-amber-200 transition-colors"
                                                     title="Edit"
                                                 >
-                                                    <FiEdit2 className="w-4 h-4 text-amber-500 group-hover:text-amber-600" />
+                                                    <FiEdit2 className="text-amber-600" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(food._id)}
-                                                    className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
+                                                    className="p-2 bg-red-100 rounded hover:bg-red-200 transition-colors"
                                                     title="Delete"
                                                 >
-                                                    <FiTrash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
+                                                    <FiTrash2 className="text-red-600" />
                                                 </button>
                                             </div>
                                         </td>
@@ -462,17 +548,20 @@ const ManageFood = () => {
                                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                                     <div>
                                         <p className="text-lg font-bold text-amber-600">৳{food.price}</p>
+                                        {food.discount > 0 && (
+                                            <p className="text-xs text-green-500">{food.discount}% off</p>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <button
-                                            onClick={() => handleViewFood(food)} // handleView থেকে handleViewFood
+                                            onClick={() => handleViewFood(food)}
                                             className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
                                             title="View"
                                         >
                                             <FiEye className="w-4 h-4 text-blue-500" />
                                         </button>
                                         <button
-                                            onClick={() => handleEdit(food)}
+                                            onClick={() => handleEditFood(food)}
                                             className="p-2 hover:bg-amber-50 rounded-lg transition-colors"
                                             title="Edit"
                                         >
@@ -512,10 +601,21 @@ const ManageFood = () => {
                     </button>
                 </div>
             )}
-            {showModal && selectedFood && (
+
+            {/* View Modal */}
+            {showViewModal && selectedFood && (
                 <FoodDetailsModal
                     food={selectedFood}
-                    onClose={handleCloseModal}
+                    onClose={handleCloseViewModal}
+                />
+            )}
+
+            
+            {showEditModal && editingFood && (
+                <FoodEdit
+                    food={editingFood}
+                    onClose={handleCloseEditModal}
+                    onSave={handleSaveEdit}
                 />
             )}
         </div>
