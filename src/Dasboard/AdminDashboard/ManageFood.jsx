@@ -15,28 +15,30 @@ import {
 } from 'react-icons/fi';
 import UseAxios from '../../Hooks/UseAxios';
 import Swal from 'sweetalert2';
+import FoodDetailsModal from './FoodDetailsModal';
+
 
 const ManageFood = () => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedFood, setSelectedFood] = useState(null); // selectedOrder থেকে selectedFood
+    const [showModal, setShowModal] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedItems, setSelectedItems] = useState([]);
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
     const [viewMode, setViewMode] = useState('table');
-    const [foods, setFoods] = useState([]) 
-    const axios =UseAxios();
+    const [foods, setFoods] = useState([])
+    const axios = UseAxios();
     const itemsPerPage = 8;
 
-    useEffect(() =>{
-        const ManageAlldata =async()=>{
-          const result =  await axios.get('/Allfood')
+    useEffect(() => {
+        const ManageAlldata = async () => {
+            const result = await axios.get('/Allfood')
             console.log(result.data);
             setFoods(result.data)
         }
         ManageAlldata()
-    },[axios])
-
-   
+    }, [axios])
 
     const categories = ['all', ...new Set(foods.map(food => food.category))];
 
@@ -83,7 +85,7 @@ const ManageFood = () => {
     // Handle select all
     const handleSelectAll = (e) => {
         if (e.target.checked) {
-            setSelectedItems(paginatedFoods.map(food => food.id));
+            setSelectedItems(paginatedFoods.map(food => food._id)); // id থেকে _id
         } else {
             setSelectedItems([]);
         }
@@ -97,9 +99,7 @@ const ManageFood = () => {
     };
 
     // Handle delete
-
     const handleDelete = async (id) => {
-
         const result = await Swal.fire({
             title: "Are you sure?",
             text: "This food will be deleted!",
@@ -111,17 +111,9 @@ const ManageFood = () => {
         });
 
         if (result.isConfirmed) {
-
             const response = await axios.delete(`/Allfood/${id}`);
-
             if (response.data.deletedCount > 0) {
-
-                Swal.fire(
-                    "Deleted!",
-                    "Food has been deleted.",
-                    "success"
-                );
-
+                Swal.fire("Deleted!", "Food has been deleted.", "success");
                 setFoods(prev => prev.filter(food => food._id !== id));
             }
         }
@@ -131,21 +123,28 @@ const ManageFood = () => {
     const handleBulkDelete = () => {
         if (selectedItems.length === 0) return;
         if (window.confirm(`Are you sure you want to delete ${selectedItems.length} items?`)) {
-            setFoods(prev => prev.filter(food => !selectedItems.includes(food.id)));
+            setFoods(prev => prev.filter(food => !selectedItems.includes(food._id)));
             setSelectedItems([]);
         }
     };
 
-    // Handle edit (you can implement your edit logic)
+    // Handle edit
     const handleEdit = (food) => {
         console.log('Edit food:', food);
-        // Navigate to edit page or open modal
     };
 
-    // Handle view
-    const handleView = (food) => {
-        console.log('View food:', food);
-        // Open modal or navigate to details page
+    // view food - ফিক্সড
+    const handleViewFood = (food) => {
+        console.log("View button clicked for food:", food);
+        setSelectedFood(food); // selectedOrder এর পরিবর্তে selectedFood
+        setShowModal(true);
+    };
+
+    // close modal
+    const handleCloseModal = () => {
+        console.log("Closing modal");
+        setShowModal(false);
+        setSelectedFood(null);
     };
 
     // Get status badge color
@@ -297,12 +296,12 @@ const ManageFood = () => {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {paginatedFoods.map((food) => (
-                                    <tr key={food.id} className="hover:bg-gray-50 transition-colors">
+                                    <tr key={food._id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedItems.includes(food.id)}
-                                                onChange={() => handleSelectItem(food.id)}
+                                                checked={selectedItems.includes(food._id)}
+                                                onChange={() => handleSelectItem(food._id)}
                                                 className="w-4 h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500"
                                             />
                                         </td>
@@ -352,11 +351,11 @@ const ManageFood = () => {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <button
-                                                    onClick={() => handleView(food)}
-                                                    className="p-2 hover:bg-blue-50 rounded-lg transition-colors group"
-                                                    title="View"
+                                                    onClick={() => handleViewFood(food)} 
+                                                    className="p-2"
+                                                    title="View Details"
                                                 >
-                                                    <FiEye className="w-4 h-4 text-blue-500 group-hover:text-blue-600" />
+                                                    <FiEye className="text-blue-600" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleEdit(food)}
@@ -398,8 +397,8 @@ const ManageFood = () => {
                                     key={i}
                                     onClick={() => setCurrentPage(i + 1)}
                                     className={`w-10 h-10 rounded-lg font-medium transition-colors ${currentPage === i + 1
-                                            ? 'bg-amber-500 text-white'
-                                            : 'hover:bg-gray-50 text-gray-600'
+                                        ? 'bg-amber-500 text-white'
+                                        : 'hover:bg-gray-50 text-gray-600'
                                         }`}
                                 >
                                     {i + 1}
@@ -419,7 +418,7 @@ const ManageFood = () => {
                 /* Grid View */
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {paginatedFoods.map((food) => (
-                        <div key={food.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group">
+                        <div key={food._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all group">
                             <div className="relative">
                                 <img
                                     src={food.image}
@@ -431,7 +430,6 @@ const ManageFood = () => {
                                         {food.status === 'available' ? 'Available' : 'Out of Stock'}
                                     </span>
                                 </div>
-                               
                             </div>
 
                             <div className="p-4">
@@ -442,8 +440,8 @@ const ManageFood = () => {
                                     </div>
                                     <input
                                         type="checkbox"
-                                        checked={selectedItems.includes(food.id)}
-                                        onChange={() => handleSelectItem(food.id)}
+                                        checked={selectedItems.includes(food._id)}
+                                        onChange={() => handleSelectItem(food._id)}
                                         className="w-4 h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500"
                                     />
                                 </div>
@@ -467,7 +465,7 @@ const ManageFood = () => {
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <button
-                                            onClick={() => handleView(food)}
+                                            onClick={() => handleViewFood(food)} // handleView থেকে handleViewFood
                                             className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
                                             title="View"
                                         >
@@ -481,7 +479,7 @@ const ManageFood = () => {
                                             <FiEdit2 className="w-4 h-4 text-amber-500" />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(food.id)}
+                                            onClick={() => handleDelete(food._id)}
                                             className="p-2 hover:bg-red-50 rounded-lg transition-colors"
                                             title="Delete"
                                         >
@@ -513,6 +511,12 @@ const ManageFood = () => {
                         Clear Filters
                     </button>
                 </div>
+            )}
+            {showModal && selectedFood && (
+                <FoodDetailsModal
+                    food={selectedFood}
+                    onClose={handleCloseModal}
+                />
             )}
         </div>
     );
