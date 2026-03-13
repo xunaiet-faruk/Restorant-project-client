@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
     HiOutlineUser,
     HiOutlineMail,
@@ -10,10 +10,12 @@ import {
     HiOutlineX,
     HiOutlineCheck
 } from 'react-icons/hi';
+import { AuthContext } from '../../Authentication/Provider/AuthProbider';
 
 const UserProfile = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const {user} =useContext(AuthContext)
 
     const [profileData, setProfileData] = useState({
         name: 'John Anderson',
@@ -158,7 +160,7 @@ const UserProfile = () => {
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500 mb-1">Full Name</p>
-                                            <p className="text-lg font-semibold text-gray-900">{profileData.name}</p>
+                                            <p className="text-lg font-semibold text-gray-900">{user?.displayName}</p>
                                         </div>
                                     </div>
 
@@ -169,7 +171,7 @@ const UserProfile = () => {
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500 mb-1">Email Address</p>
-                                            <p className="text-lg font-semibold text-gray-900">{profileData.email}</p>
+                                            <p className="text-lg font-semibold text-gray-900">{user?.email}</p>
                                             <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">readonly</span>
                                         </div>
                                     </div>
@@ -206,7 +208,7 @@ const UserProfile = () => {
                                 <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6 mb-8">
                                     <div className="relative group">
                                         <img
-                                            src={editForm.photo}
+                                            src={user?.photo}
                                             alt="Profile"
                                             className="w-32 h-32 rounded-2xl border-4 border-orange-200 shadow-xl object-cover"
                                         />

@@ -41,6 +41,7 @@ const Register = () => {
             }
 
             const result = await createUser(email, password);
+            console.log(result);
 
             await updateuserProfile(name, imageUrl);
 
