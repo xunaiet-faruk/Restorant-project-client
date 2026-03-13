@@ -63,7 +63,7 @@ const MyOrders = () => {
         setLoading(true);
         axios.get(`/buyFood/${user.email}`)
             .then(res => {
-                // Transform API data to match your table structure
+              
                 const formattedOrders = res.data.map(order => ({
                     _id: order._id,
                     foodId: order.foodId,

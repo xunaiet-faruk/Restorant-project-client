@@ -19,6 +19,7 @@ import UserHome from "../../Dasboard/UserDashboard/UserHome";
 import UserProfile from "../../Dasboard/UserDashboard/UserProfile";
 import MyOrders from "../../Dasboard/UserDashboard/MyOrders";
 import PaymentHistory from "../../Dasboard/UserDashboard/PaymentHistory";
+import Pay from "../../Dasboard/UserDashboard/Pay";
 
 
 const router = createBrowserRouter([
@@ -92,6 +93,10 @@ const router = createBrowserRouter([
             {
                 path:'payment-history',
                 element : <PaymentHistory/>
+            },
+            {
+                path:'payment',
+                element : <Pay/>
             }
         ]
     }
