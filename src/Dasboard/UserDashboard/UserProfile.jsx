@@ -2,33 +2,52 @@ import React, { useContext, useState } from 'react';
 import {
     HiOutlineUser,
     HiOutlineMail,
-    HiOutlinePhone,
-    HiOutlineLocationMarker,
     HiOutlineCamera,
     HiOutlinePencil,
     HiOutlineSave,
     HiOutlineX,
-    HiOutlineCheck
+    HiOutlineCheckCircle,
+    HiOutlineShieldCheck,
+    HiOutlineClock,
+    HiOutlineShoppingBag,
+    HiOutlineStar,
+    HiOutlineLocationMarker,
+    HiOutlinePhone,
+    HiOutlineCalendar
 } from 'react-icons/hi';
+import { MdVerified, MdEmail } from 'react-icons/md';
+import { FaRegUserCircle } from 'react-icons/fa';
 import { AuthContext } from '../../Authentication/Provider/AuthProbider';
+import UseAxios from '../../Hooks/UseAxios';
+import Swal from 'sweetalert2';
 
 const UserProfile = () => {
     const [isEditing, setIsEditing] = useState(false);
-    const [showSuccess, setShowSuccess] = useState(false);
-    const {user} =useContext(AuthContext)
-
-    const [profileData, setProfileData] = useState({
-        name: 'John Anderson',
-        email: 'john.anderson@example.com',
+    const [loading, setLoading] = useState(false);
+    const { user } = useContext(AuthContext);
+    const axios = UseAxios();
+    const [userStats, setUserStats] = useState({
+        memberSince: 'March 2024',
+        totalOrders: 24,
+        totalSpent: 356.80,
+        memberTier: 'Gold Member',
+        points: 1250,
         phone: '+1 (555) 123-4567',
-        address: '123 Main Street, New York, NY 10001',
-        photo: 'https://i.pravatar.cc/300?img=7',
-        joinDate: 'January 2023',
-        totalOrders: 156,
-        memberTier: 'Gold Member'
+        address: '123 Main Street, New York, NY 10001'
     });
 
-    const [editForm, setEditForm] = useState({ ...profileData });
+    const [profileData, setProfileData] = useState({
+        name: user?.displayName || 'User',
+        email: user?.email || '',
+        photo: user?.photoURL || 'https://via.placeholder.com/150'
+    });
+
+    const [editForm, setEditForm] = useState({
+        name: profileData.name,
+        photo: profileData.photo,
+        phone: userStats.phone,
+        address: userStats.address
+    });
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -38,21 +57,41 @@ const UserProfile = () => {
         }));
     };
 
-    const handleSaveProfile = () => {
-        setProfileData(editForm);
-        setIsEditing(false);
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-    };
-
-    const handleCancelEdit = () => {
-        setEditForm(profileData);
-        setIsEditing(false);
-    };
-
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
+
+    
+        const maxSize = 2 * 1024 * 1024; 
+
         if (file) {
+        
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+
+            if (file.size > maxSize) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Too Large!',
+                    text: `Your image is ${fileSizeMB}MB. Maximum allowed size is 2MB. Please select a smaller image.`,
+                    timer: 3000,
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#f97316',
+                    background: '#fff',
+                    iconColor: '#ef4444'
+                });
+                e.target.value = ''; 
+                return;
+            }
+            Swal.fire({
+                icon: 'success',
+                title: 'Image Selected!',
+                text: `Image size: ${fileSizeMB}MB - Ready to upload`,
+                timer: 1500,
+                showConfirmButton: false,
+                background: '#fff',
+                iconColor: '#22c55e'
+            });
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 setEditForm(prev => ({
@@ -64,44 +103,113 @@ const UserProfile = () => {
         }
     };
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
-            {/* Success Notification */}
-            {showSuccess && (
-                <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 animate-slideDown z-50">
-                    <HiOutlineCheck className="w-5 h-5" />
-                    Profile updated successfully!
-                </div>
-            )}
+    const handleSaveProfile = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.put('/profile/update', {
+                email: user.email,
+                name: editForm.name,
+                photo: editForm.photo,
+                phone: editForm.phone,
+                address: editForm.address
+            });
 
-            {/* Main Profile Card */}
+            if (response.data.success) {
+                setProfileData({
+                    ...profileData,
+                    name: editForm.name,
+                    photo: editForm.photo
+                });
+
+                setUserStats({
+                    ...userStats,
+                    phone: editForm.phone,
+                    address: editForm.address
+                });
+
+                setIsEditing(false);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Profile updated successfully',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    background: '#fff',
+                    iconColor: '#22c55e'
+                });
+            }
+
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: 'Failed to update profile',
+                background: '#fff',
+                iconColor: '#ef4444'
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 p-4 md:p-8">
+            {/* Decorative Elements */}
+            <div className="fixed top-0 left-0 w-full h-64 bg-gradient-to-r from-orange-500/10 to-red-500/10 -z-10"></div>
+            <div className="fixed bottom-0 right-0 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl -z-10"></div>
+
             <div className="max-w-4xl mx-auto">
-                {/* Header with Update Button */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">User Profile</h1>
-                        <p className="text-gray-500 mt-1">Manage your personal information</p>
+                {/* Header Section */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg shadow-orange-500/30">
+                            <FaRegUserCircle className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">My Profile</h1>
+                            <p className="text-gray-500 mt-1">Manage your personal information and preferences</p>
+                        </div>
                     </div>
+
                     {!isEditing ? (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-orange-500/30"
+                            className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-orange-500/30 font-medium"
                         >
                             <HiOutlinePencil className="w-5 h-5" />
-                            Update Profile
+                            Edit Profile
                         </button>
                     ) : (
                         <div className="flex gap-3">
                             <button
                                 onClick={handleSaveProfile}
-                                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-green-500/30"
+                                disabled={loading}
+                                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-green-500/30 font-medium disabled:opacity-50"
                             >
-                                <HiOutlineSave className="w-5 h-5" />
-                                Save
+                                {loading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <HiOutlineSave className="w-5 h-5" />
+                                        Save Changes
+                                    </>
+                                )}
                             </button>
                             <button
-                                onClick={handleCancelEdit}
-                                className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all hover:scale-105 active:scale-95"
+                                onClick={() => {
+                                    setEditForm({
+                                        name: profileData.name,
+                                        photo: profileData.photo,
+                                        phone: userStats.phone,
+                                        address: userStats.address
+                                    });
+                                    setIsEditing(false);
+                                }}
+                                className="flex items-center gap-2 px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all hover:scale-105 active:scale-95 font-medium"
                             >
                                 <HiOutlineX className="w-5 h-5" />
                                 Cancel
@@ -110,20 +218,22 @@ const UserProfile = () => {
                     )}
                 </div>
 
-                {/* Profile Content */}
-                <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-                    {/* Cover Photo */}
-                    <div className="h-32 bg-gradient-to-r from-orange-400 to-red-500 relative">
+               
+
+                {/* Profile Card */}
+                <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+                    {/* Cover Photo with Gradient */}
+                    <div className="h-32 bg-gradient-to-r from-orange-400 via-red-400 to-orange-400 relative">
                         {!isEditing && (
                             <div className="absolute -bottom-16 left-8">
                                 <div className="relative group">
                                     <img
                                         src={profileData.photo}
-                                        alt="Profile"
-                                        className="w-32 h-32 rounded-2xl border-4 border-white shadow-xl object-cover"
+                                        alt={profileData.name}
+                                        className="w-32 h-32 rounded-2xl border-4 border-white shadow-xl object-cover ring-4 ring-orange-500/20"
                                     />
-                                    <div className="absolute inset-0 bg-black bg-opacity-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <HiOutlineCamera className="w-8 h-8 text-white" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
+                                        <span className="text-white text-xs font-medium">Profile Picture</span>
                                     </div>
                                 </div>
                             </div>
@@ -131,89 +241,102 @@ const UserProfile = () => {
                     </div>
 
                     {/* Profile Info */}
-                    <div className="pt-20 p-8">
+                    <div className={!isEditing ? "pt-20 p-8" : "p-8"}>
                         {!isEditing ? (
                             /* View Mode */
                             <div className="space-y-8">
-                                {/* Quick Stats */}
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                                    <div className="bg-orange-50 rounded-xl p-4 text-center">
-                                        <p className="text-2xl font-bold text-orange-600">{profileData.totalOrders}</p>
-                                        <p className="text-sm text-gray-600">Total Orders</p>
+                                {/* Basic Info */}
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-gray-900">{profileData.name}</h2>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <MdEmail className="w-4 h-4 text-gray-400" />
+                                            <p className="text-gray-500">{profileData.email}</p>
+                                            <MdVerified className="w-4 h-4 text-blue-500" />
+                                        </div>
                                     </div>
-                                    <div className="bg-blue-50 rounded-xl p-4 text-center">
-                                        <p className="text-2xl font-bold text-blue-600">{profileData.memberTier}</p>
-                                        <p className="text-sm text-gray-600">Membership</p>
-                                    </div>
-                                    <div className="bg-purple-50 rounded-xl p-4 text-center">
-                                        <p className="text-2xl font-bold text-purple-600">{profileData.joinDate}</p>
-                                        <p className="text-sm text-gray-600">Joined</p>
+                                    <div className="mt-4 sm:mt-0">
+                                        <span className="px-4 py-2 bg-gradient-to-r from-orange-100 to-red-100 text-orange-600 rounded-xl text-sm font-medium inline-flex items-center gap-2">
+                                            <HiOutlineCheckCircle className="w-4 h-4" />
+                                            Verified Account
+                                        </span>
                                     </div>
                                 </div>
 
-                                {/* Profile Details */}
+                                {/* Contact & Address */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Name */}
-                                    <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                        <div className="p-3 bg-orange-100 rounded-lg">
-                                            <HiOutlineUser className="w-6 h-6 text-orange-600" />
+                                    <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl hover:shadow-md transition-all">
+                                        <div className="p-3 bg-gradient-to-br from-green-100 to-green-50 rounded-lg">
+                                            <HiOutlinePhone className="w-5 h-5 text-green-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm text-gray-500 mb-1">Full Name</p>
-                                            <p className="text-lg font-semibold text-gray-900">{user?.displayName}</p>
+                                            <p className="text-xs text-gray-500 mb-1">Phone Number</p>
+                                            <p className="text-base font-medium text-gray-900">{userStats.phone}</p>
                                         </div>
                                     </div>
 
-                                    {/* Email (Readonly) */}
-                                    <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                        <div className="p-3 bg-blue-100 rounded-lg">
-                                            <HiOutlineMail className="w-6 h-6 text-blue-600" />
+                                    <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-purple-100 to-purple-50 rounded-xl hover:shadow-md transition-all">
+                                        <div className="p-3 bg-gradient-to-br from-purple-100 to-purple-50 rounded-lg">
+                                            <HiOutlineLocationMarker className="w-5 h-5 text-purple-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm text-gray-500 mb-1">Email Address</p>
-                                            <p className="text-lg font-semibold text-gray-900">{user?.email}</p>
-                                            <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">readonly</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Phone */}
-                                    <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                        <div className="p-3 bg-green-100 rounded-lg">
-                                            <HiOutlinePhone className="w-6 h-6 text-green-600" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500 mb-1">Phone Number</p>
-                                            <p className="text-lg font-semibold text-gray-900">{profileData.phone}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Address */}
-                                    <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors md:col-span-2">
-                                        <div className="p-3 bg-purple-100 rounded-lg">
-                                            <HiOutlineLocationMarker className="w-6 h-6 text-purple-600" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500 mb-1">Delivery Address</p>
-                                            <p className="text-lg font-semibold text-gray-900">{profileData.address}</p>
+                                            <p className="text-xs text-gray-500 mb-1">Delivery Address</p>
+                                            <p className="text-base font-medium text-gray-900">{userStats.address}</p>
                                         </div>
                                     </div>
                                 </div>
 
-                               
+                                {/* Account Details */}
+                                <div className="border-t border-gray-200 pt-6">
+                                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Account Details</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                            <HiOutlineUser className="w-5 h-5 text-orange-500" />
+                                            <div>
+                                                <p className="text-xs text-gray-500">Full Name</p>
+                                                <p className="font-medium text-gray-900">{profileData.name}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                            <HiOutlineMail className="w-5 h-5 text-orange-500" />
+                                            <div>
+                                                <p className="text-xs text-gray-500">Email Address</p>
+                                                <p className="font-medium text-gray-900">{profileData.email}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                            <HiOutlineClock className="w-5 h-5 text-orange-500" />
+                                            <div>
+                                                <p className="text-xs text-gray-500">Last Login</p>
+                                                <p className="font-medium text-gray-900">Today, 10:30 AM</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                            <HiOutlineShoppingBag className="w-5 h-5 text-orange-500" />
+                                            <div>
+                                                <p className="text-xs text-gray-500">Total Spent</p>
+                                                <p className="font-medium text-gray-900">${userStats.totalSpent}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
                             /* Edit Mode */
-                            <div className="space-y-6">
+                            <div className="space-y-8">
                                 {/* Photo Upload */}
-                                <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6 mb-8">
+                                <div className="flex flex-col items-center sm:flex-row sm:items-start gap-8">
                                     <div className="relative group">
                                         <img
-                                            src={user?.photo}
+                                            src={editForm.photo}
                                             alt="Profile"
-                                            className="w-32 h-32 rounded-2xl border-4 border-orange-200 shadow-xl object-cover"
+                                            className="w-32 h-32 rounded-2xl border-4 border-orange-200 shadow-xl object-cover ring-4 ring-orange-500/20"
                                         />
-                                        <label className="absolute bottom-0 right-0 bg-orange-600 p-2 rounded-full cursor-pointer hover:bg-orange-700 transition-colors shadow-lg">
-                                            <HiOutlineCamera className="w-5 h-5 text-white" />
+                                        <label className="absolute -bottom-2 -right-2 bg-gradient-to-br from-orange-500 to-red-500 p-3 rounded-full cursor-pointer hover:from-orange-600 hover:to-red-600 transition-all shadow-lg group-hover:scale-110">
+                                            <HiOutlineCamera className="w-4 h-4 text-white" />
                                             <input
                                                 type="file"
                                                 accept="image/*"
@@ -224,10 +347,15 @@ const UserProfile = () => {
                                     </div>
                                     <div className="flex-1">
                                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Photo</h3>
-                                        <p className="text-sm text-gray-500 mb-3">Upload a new profile picture. Recommended size: 300x300px</p>
-                                        <button className="text-sm text-orange-600 hover:text-orange-700 font-medium">
-                                            Remove photo
-                                        </button>
+                                        <p className="text-sm text-gray-500 mb-3">Upload a new profile picture. Maximum size: 2MB</p>
+                                        <div className="flex gap-2">
+                                            <span className="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-medium">
+                                                JPG, PNG, GIF
+                                            </span>
+                                            <span className="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-medium">
+                                                Max 2MB
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -236,7 +364,7 @@ const UserProfile = () => {
                                     {/* Name */}
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
-                                            <HiOutlineUser className="inline mr-2 text-orange-600" />
+                                            <HiOutlineUser className="inline mr-2 text-orange-500" />
                                             Full Name
                                         </label>
                                         <input
@@ -252,23 +380,26 @@ const UserProfile = () => {
                                     {/* Email (Readonly) */}
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
-                                            <HiOutlineMail className="inline mr-2 text-blue-600" />
+                                            <HiOutlineMail className="inline mr-2 text-blue-500" />
                                             Email Address
                                         </label>
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={editForm.email}
-                                            readOnly
-                                            className="w-full px-4 py-3 border border-gray-200 bg-gray-50 rounded-xl text-gray-500 cursor-not-allowed"
-                                        />
-                                        <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+                                        <div className="relative">
+                                            <input
+                                                type="email"
+                                                value={profileData.email}
+                                                readOnly
+                                                className="w-full px-4 py-3 border border-gray-200 bg-gray-50 rounded-xl text-gray-500 cursor-not-allowed"
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                                                verified
+                                            </span>
+                                        </div>
                                     </div>
 
                                     {/* Phone */}
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
-                                            <HiOutlinePhone className="inline mr-2 text-green-600" />
+                                            <HiOutlinePhone className="inline mr-2 text-green-500" />
                                             Phone Number
                                         </label>
                                         <input
@@ -284,7 +415,7 @@ const UserProfile = () => {
                                     {/* Address */}
                                     <div className="md:col-span-2 space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
-                                            <HiOutlineLocationMarker className="inline mr-2 text-purple-600" />
+                                            <HiOutlineLocationMarker className="inline mr-2 text-purple-500" />
                                             Delivery Address
                                         </label>
                                         <textarea
@@ -298,28 +429,19 @@ const UserProfile = () => {
                                     </div>
                                 </div>
 
-                                {/* Form Actions */}
-                                <div className="flex gap-4 pt-6 border-t border-gray-200">
-                                    <button
-                                        onClick={handleSaveProfile}
-                                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all hover:scale-105 active:scale-95"
-                                    >
-                                        <HiOutlineSave className="w-5 h-5" />
-                                        Save Changes
-                                    </button>
-                                    <button
-                                        onClick={handleCancelEdit}
-                                        className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all hover:scale-105 active:scale-95"
-                                    >
-                                        Cancel
-                                    </button>
+                                {/* Form Hint */}
+                                <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-xl border border-orange-100">
+                                    <p className="text-sm text-orange-600 flex items-center gap-2">
+                                        <HiOutlineCheckCircle className="w-5 h-5" />
+                                        Your information is secure and will only be used for order delivery and communication.
+                                    </p>
                                 </div>
                             </div>
                         )}
                     </div>
                 </div>
 
-              
+                
             </div>
 
             <style jsx>{`
