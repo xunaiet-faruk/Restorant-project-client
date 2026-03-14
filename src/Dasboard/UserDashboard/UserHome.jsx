@@ -11,15 +11,11 @@ import {
 } from 'react-icons/hi';
 import {
     GiCookingPot,
-    GiSushis,
     GiHotMeal
 } from 'react-icons/gi';
 import {
     MdDeliveryDining
 } from 'react-icons/md';
-import {
-    BsCupHot
-} from 'react-icons/bs';
 import { FaRegClock, FaRegCheckCircle } from 'react-icons/fa';
 import { AuthContext } from '../../Authentication/Provider/AuthProbider';
 import UseAxios from '../../Hooks/UseAxios';
@@ -50,10 +46,14 @@ const UserHome = () => {
                 const profileRes = await axios.get(`/user/${user.email}`);
                 setUserProfile(profileRes.data);
                 const ordersRes = await axios.get(`/buyFood/${user.email}`);
-                const orders = ordersRes.data || [];
-                setUserOrders(orders);
 
-                calculateStats(orders);
+                const mappedOrders = (ordersRes.data || []).map(order => ({
+                    ...order,
+                    displayStatus: mapStatus(order.status) 
+                }));
+
+                setUserOrders(mappedOrders);
+                calculateStats(mappedOrders);
 
             } catch (error) {
                 console.error("Error fetching user data:", error);
@@ -65,16 +65,50 @@ const UserHome = () => {
         fetchUserData();
     }, [user?.email]);
 
+    
+    
+    const mapStatus = (status) => {
+        const statusMap = {
+        
+            'pending': 'Pending',
+            'Pending': 'Pending',
+            'pend': 'Pending',
+
+      
+            'Cooking': 'Processing',
+            'cooking': 'Processing',
+            'Processing': 'Processing',
+            'processing': 'Processing',
+            'preparing': 'Processing',
+            'in progress': 'Processing',
+
+         
+            'Delivered': 'Delivered',
+            'delivered': 'Delivered',
+            'Completed': 'Delivered',
+            'completed': 'Delivered',
+            'done': 'Delivered',
+
+            'cancelled': 'Cancelled',
+            'Cancelled': 'Cancelled',
+            'cancel': 'Cancelled',
+            'rejected': 'Cancelled',
+            'Rejected': 'Cancelled'
+        };
+
+        const mappedStatus = statusMap[status] || statusMap[status?.toLowerCase()] || 'Pending';
+
+        return mappedStatus;
+    };
+
     const calculateStats = (orders) => {
         const total = orders.length;
-        const pending = orders.filter(o => o.status === "pending").length;
-        const cooking = orders.filter(o => o.status === "Cooking").length;
-        const delivered = orders.filter(o => o.status === "Delivered").length;
-        const completed = orders.filter(o => o.status === "Delivered" || o.status === "Completed").length;
+        const pending = orders.filter(o => o.displayStatus === "Pending").length;
+        const processing = orders.filter(o => o.displayStatus === "Processing").length;
+        const delivered = orders.filter(o => o.displayStatus === "Delivered").length;
+        const cancelled = orders.filter(o => o.displayStatus === "Cancelled").length;
 
         const totalAmount = orders.reduce((sum, order) => sum + (order.price * order.quantity), 0);
-        const avgOrder = orders.length > 0 ? (totalAmount / orders.length).toFixed(2) : 0;
-
         const savedAmount = (totalAmount * 0.1).toFixed(2);
         const growth = total > 0 ? '+12%' : '0%';
         const avgRating = orders.reduce((sum, order) => sum + (order.rating || 4.5), 0) / (orders.length || 1);
@@ -89,15 +123,15 @@ const UserHome = () => {
                 textColor: 'text-blue-600'
             },
             pendingOrders: {
-                count: pending + cooking,
-                timeEstimate: `${Math.round((pending + cooking) * 15)} mins`,
+                count: pending + processing, // Pending + Processing একসাথে
+                timeEstimate: `${Math.round((pending + processing) * 15)} mins`,
                 icon: HiOutlineClock,
                 color: 'from-yellow-500 to-yellow-600',
                 bgColor: 'bg-yellow-50',
                 textColor: 'text-yellow-600'
             },
             completedOrders: {
-                count: completed,
+                count: delivered,
                 rating: avgRating.toFixed(1),
                 icon: HiOutlineCheckCircle,
                 color: 'from-green-500 to-green-600',
@@ -114,31 +148,26 @@ const UserHome = () => {
             }
         });
     };
-
-    const getOrderIcon = (status) => {
-        switch (status?.toLowerCase()) {
-            case 'cooking': return GiCookingPot;
-            case 'delivered': return MdDeliveryDining;
-            case 'pending': return FaRegClock;
-            case 'completed': return FaRegCheckCircle;
-            case 'cancel': return FcCancel;
+    const getOrderIcon = (displayStatus) => {
+        switch (displayStatus) {
+            case 'Processing': return GiCookingPot;
+            case 'Delivered': return MdDeliveryDining;
+            case 'Pending': return FaRegClock;
+            case 'Cancelled': return FcCancel;
             default: return GiHotMeal;
         }
     };
 
-    // Get status color
-    const getStatusColor = (status) => {
-        switch (status?.toLowerCase()) {
-            case 'cooking': return 'bg-orange-100 text-orange-700';
-            case 'delivered': return 'bg-green-100 text-green-700';
-            case 'pending': return 'bg-yellow-100 text-yellow-700';
-            case 'completed': return 'bg-blue-100 text-blue-700';
-            case 'cancel': return 'bg-red-100 text-red-700';
+    const getStatusColor = (displayStatus) => {
+        switch (displayStatus) {
+            case 'Processing': return 'bg-orange-100 text-orange-700';
+            case 'Delivered': return 'bg-green-100 text-green-700';
+            case 'Pending': return 'bg-yellow-100 text-yellow-700';
+            case 'Cancelled': return 'bg-red-100 text-red-700';
             default: return 'bg-gray-100 text-gray-700';
         }
     };
 
-    // Loading state
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -147,8 +176,8 @@ const UserHome = () => {
         );
     }
 
-    // Cards Component
-    const StatCard = ({ stat, title, value, subValue, icon: Icon, bgColor, textColor, gradient }) => (
+    // StatCard Component
+    const StatCard = ({ stat, title, value, subValue, icon: Icon, bgColor, textColor }) => (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -221,7 +250,7 @@ const UserHome = () => {
                 </div>
             </motion.div>
 
-            {/* Stats Cards - Dynamic */}
+            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard
                     stat={stats.totalOrders}
@@ -234,7 +263,7 @@ const UserHome = () => {
                 />
                 <StatCard
                     stat={stats.pendingOrders}
-                    title="Pending Orders"
+                    title="Active Orders"
                     value={stats.pendingOrders.count}
                     subValue="in progress"
                     icon={stats.pendingOrders.icon}
@@ -243,7 +272,7 @@ const UserHome = () => {
                 />
                 <StatCard
                     stat={stats.completedOrders}
-                    title="Completed Orders"
+                    title="Delivered Orders"
                     value={stats.completedOrders.count}
                     subValue="total done"
                     icon={stats.completedOrders.icon}
@@ -292,13 +321,13 @@ const UserHome = () => {
                     <p className="text-sm text-gray-500">On-time Delivery</p>
                     <p className="text-xl font-bold text-green-600">
                         {userOrders.length > 0
-                            ? Math.round((userOrders.filter(o => o.status === 'Delivered').length / userOrders.length) * 100)
+                            ? Math.round((userOrders.filter(o => o.displayStatus === 'Delivered').length / userOrders.length) * 100)
                             : 0}%
                     </p>
                 </div>
             </div>
 
-            {/* Recent Orders Table - Dynamic */}
+            {/* Recent Orders Table */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -328,17 +357,17 @@ const UserHome = () => {
                 </div>
 
                 <div className="divide-y divide-gray-100">
-                    {userOrders.slice(0, 5).map((order, index) => {
-                        const OrderIcon = getOrderIcon(order.status);
+                    {userOrders.slice(0, 5).map((order) => {
+                        const OrderIcon = getOrderIcon(order.displayStatus);
                         return (
                             <div key={order._id} className="p-6 hover:bg-gray-50 transition-colors group">
                                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform
-                                            ${order.status === 'pending' ? 'bg-orange-50 text-orange-600' :
-                                                order.status === 'Delivered' ? 'bg-green-50 text-green-600' :
-                                                    order.status === 'Cooking' ? 'bg-yellow-50 text-yellow-600' :
-                                                        'bg-blue-50 text-blue-600'}`}>
+                                            ${order.displayStatus === 'Pending' ? 'bg-yellow-50 text-yellow-600' :
+                                                order.displayStatus === 'Processing' ? 'bg-orange-50 text-orange-600' :
+                                                    order.displayStatus === 'Delivered' ? 'bg-green-50 text-green-600' :
+                                                        'bg-red-50 text-red-600'}`}>
                                             <OrderIcon className="w-6 h-6" />
                                         </div>
                                         <div>
@@ -363,8 +392,8 @@ const UserHome = () => {
                                     </div>
 
                                     <div className="flex items-center gap-4">
-                                        <span className={`px-4 py-2 rounded-xl text-sm font-medium ${getStatusColor(order.status)}`}>
-                                            {order.status}
+                                        <span className={`px-4 py-2 rounded-xl text-sm font-medium ${getStatusColor(order.displayStatus)}`}>
+                                            {order.displayStatus}
                                         </span>
                                         <button className="text-gray-400 hover:text-orange-600 transition-colors">
                                             <HiOutlineArrowRight className="w-5 h-5" />
@@ -391,4 +420,3 @@ const UserHome = () => {
 };
 
 export default UserHome;
-

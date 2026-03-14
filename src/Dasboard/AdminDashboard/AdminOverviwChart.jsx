@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     AreaChart, Area,
     BarChart, Bar,
@@ -13,75 +13,286 @@ import {
     RadarChart, Radar,
     PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
+import UseAxios from '../../Hooks/UseAxios';
 
 const AdminOverviewChart = () => {
+    const axios = UseAxios();
     const [timeRange, setTimeRange] = useState('weekly');
     const [chartType, setChartType] = useState('revenue');
+    const [loading, setLoading] = useState(true);
+    const [weeklyData, setWeeklyData] = useState([]);
+    const [monthlyData, setMonthlyData] = useState([]);
+    const [categoryData, setCategoryData] = useState([]);
+    const [topItemsData, setTopItemsData] = useState([]);
+    const [hourlyData, setHourlyData] = useState([]);
+    const [performanceData, setPerformanceData] = useState([]);
+    const [summaryData, setSummaryData] = useState({
+        avgDailyRevenue: 0,
+        avgDailyOrders: 0,
+        avgOrderValue: 0,
+        peakHours: '7-8 PM',
+        peakCustomers: 0,
+        growth: {
+            revenue: '+0%',
+            orders: '+0%',
+            value: '+0%'
+        }
+    });
 
-    // Sample data - Weekly revenue and orders
-    const weeklyData = [
-        { name: 'Mon', revenue: 4500, orders: 45, customers: 38, foodItems: 28 },
-        { name: 'Tue', revenue: 5200, orders: 52, customers: 44, foodItems: 32 },
-        { name: 'Wed', revenue: 6800, orders: 68, customers: 58, foodItems: 35 },
-        { name: 'Thu', revenue: 5900, orders: 59, customers: 51, foodItems: 30 },
-        { name: 'Fri', revenue: 8200, orders: 82, customers: 72, foodItems: 42 },
-        { name: 'Sat', revenue: 9800, orders: 98, customers: 85, foodItems: 48 },
-        { name: 'Sun', revenue: 7200, orders: 72, customers: 63, foodItems: 38 },
-    ];
+    useEffect(() => {
+        const fetchChartData = async () => {
+            try {
+                setLoading(true);
 
-    // Monthly data
-    const monthlyData = [
-        { name: 'Jan', revenue: 45000, orders: 450, customers: 380, foodItems: 120 },
-        { name: 'Feb', revenue: 52000, orders: 520, customers: 440, foodItems: 135 },
-        { name: 'Mar', revenue: 68000, orders: 680, customers: 580, foodItems: 148 },
-        { name: 'Apr', revenue: 59000, orders: 590, customers: 510, foodItems: 142 },
-        { name: 'May', revenue: 82000, orders: 820, customers: 720, foodItems: 156 },
-        { name: 'Jun', revenue: 98000, orders: 980, customers: 850, foodItems: 168 },
-        { name: 'Jul', revenue: 72000, orders: 720, customers: 630, foodItems: 158 },
-    ];
+              
+                const [ordersRes, foodsRes, usersRes] = await Promise.all([
+                    axios.get('/manageProuct'),  
+                    axios.get('/Allfood'),      
+                    axios.get('/register')       
+                ]);
 
-    // Category distribution data
-    const categoryData = [
-        { name: 'Appetizers', value: 25, color: '#F59E0B' },
-        { name: 'Main Course', value: 40, color: '#10B981' },
-        { name: 'Desserts', value: 15, color: '#EF4444' },
-        { name: 'Beverages', value: 20, color: '#3B82F6' },
-    ];
+                const orders = ordersRes.data || [];
+                const foods = foodsRes.data || [];
+                const users = usersRes.data || [];
+                processChartData(orders, foods, users);
 
-    // Top selling items
-    const topItemsData = [
-        { name: 'Chicken Burger', sales: 145, revenue: 2175, color: '#F59E0B' },
-        { name: 'Beef Steak', sales: 98, revenue: 2940, color: '#10B981' },
-        { name: 'Caesar Salad', sales: 87, revenue: 1305, color: '#EF4444' },
-        { name: 'Pasta Carbonara', sales: 76, revenue: 1520, color: '#3B82F6' },
-        { name: 'Margherita Pizza', sales: 65, revenue: 1625, color: '#8B5CF6' },
-    ];
+            } catch (error) {
+                console.error("Error fetching chart data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // Hourly traffic data
-    const hourlyData = [
-        { hour: '9AM', customers: 12 },
-        { hour: '10AM', customers: 18 },
-        { hour: '11AM', customers: 25 },
-        { hour: '12PM', customers: 45 },
-        { hour: '1PM', customers: 58 },
-        { hour: '2PM', customers: 42 },
-        { hour: '3PM', customers: 28 },
-        { hour: '4PM', customers: 22 },
-        { hour: '5PM', customers: 35 },
-        { hour: '6PM', customers: 52 },
-        { hour: '7PM', customers: 68 },
-        { hour: '8PM', customers: 55 },
-        { hour: '9PM', customers: 32 },
-    ];
+        fetchChartData();
+    }, [axios]);
 
-    // Performance metrics
-    const performanceData = [
-        { metric: 'Sales', value: 85, fullMark: 100 },
-        { metric: 'Service', value: 92, fullMark: 100 },
-        { metric: 'Quality', value: 88, fullMark: 100 },
-        { metric: 'Ambiance', value: 78, fullMark: 100 },
-        { metric: 'Value', value: 82, fullMark: 100 },
-    ];
+ 
+    const processChartData = (orders, foods, users) => {
+
+      
+        const weekly = generateWeeklyData(orders);
+        setWeeklyData(weekly);
+
+
+        const monthly = generateMonthlyData(orders);
+        setMonthlyData(monthly);
+
+
+        const categories = generateCategoryData(foods, orders);
+        setCategoryData(categories);
+
+        const topItems = generateTopItems(orders, foods);
+        setTopItemsData(topItems);
+
+    
+        const hourly = generateHourlyData(orders);
+        setHourlyData(hourly);
+
+       
+        const performance = generatePerformanceData(orders, users);
+        setPerformanceData(performance);
+
+        const summary = calculateSummary(orders);
+        setSummaryData(summary);
+    };
+
+   
+    const generateWeeklyData = (orders) => {
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const weeklyStats = days.map(day => ({
+            name: day,
+            revenue: 0,
+            orders: 0,
+            customers: 0,
+            foodItems: 0
+        }));
+
+        orders.forEach(order => {
+            const orderDate = new Date(order.orderDate);
+            const dayIndex = orderDate.getDay(); 
+            const dayData = weeklyStats[dayIndex];
+
+            dayData.revenue += order.price * order.quantity;
+            dayData.orders += 1;
+            dayData.customers += 1;
+            dayData.foodItems += order.quantity;
+        });
+
+        return weeklyStats;
+    };
+
+    const generateMonthlyData = (orders) => {
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthlyStats = months.map(month => ({
+            name: month,
+            revenue: 0,
+            orders: 0,
+            customers: 0,
+            foodItems: 0
+        }));
+
+        orders.forEach(order => {
+            const orderDate = new Date(order.orderDate);
+            const monthIndex = orderDate.getMonth();
+            const monthData = monthlyStats[monthIndex];
+
+            monthData.revenue += order.price * order.quantity;
+            monthData.orders += 1;
+            monthData.customers += 1;
+            monthData.foodItems += order.quantity;
+        });
+
+        return monthlyStats.filter(month => month.orders > 0);
+    };
+
+    const generateCategoryData = (foods, orders) => {
+        const categoryMap = {};
+        const colors = ['#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899'];
+
+      
+        foods.forEach(food => {
+            const cat = food.category || 'Other';
+            if (!categoryMap[cat]) {
+                categoryMap[cat] = {
+                    name: cat,
+                    value: 0,
+                    count: 0
+                };
+            }
+        });
+
+        orders.forEach(order => {
+            const food = foods.find(f => f._id === order.foodId);
+            if (food) {
+                const cat = food.category || 'Other';
+                if (categoryMap[cat]) {
+                    categoryMap[cat].value += order.quantity;
+                    categoryMap[cat].count += 1;
+                }
+            }
+        });
+
+        
+        return Object.values(categoryMap).map((item, index) => ({
+            ...item,
+            color: colors[index % colors.length]
+        }));
+    };
+
+   
+    const generateTopItems = (orders, foods) => {
+        const itemSales = {};
+
+        orders.forEach(order => {
+            const food = foods.find(f => f._id === order.foodId);
+            if (food) {
+                if (!itemSales[order.name]) {
+                    itemSales[order.name] = {
+                        name: order.name,
+                        sales: 0,
+                        revenue: 0,
+                        color: `#${Math.floor(Math.random() * 16777215).toString(16)}`
+                    };
+                }
+                itemSales[order.name].sales += order.quantity;
+                itemSales[order.name].revenue += order.price * order.quantity;
+            }
+        });
+
+     
+        return Object.values(itemSales)
+            .sort((a, b) => b.sales - a.sales)
+            .slice(0, 5);
+    };
+
+    
+    const generateHourlyData = (orders) => {
+        const hours = [
+            '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM', '6PM', '7PM', '8PM', '9PM'
+        ];
+
+        const hourlyStats = hours.map(hour => ({
+            hour,
+            customers: 0
+        }));
+
+        orders.forEach(order => {
+            const orderDate = new Date(order.orderDate);
+            const hour = orderDate.getHours();
+
+            let hourIndex;
+            if (hour >= 9 && hour < 10) hourIndex = 0;
+            else if (hour >= 10 && hour < 11) hourIndex = 1;
+            else if (hour >= 11 && hour < 12) hourIndex = 2;
+            else if (hour >= 12 && hour < 13) hourIndex = 3;
+            else if (hour >= 13 && hour < 14) hourIndex = 4;
+            else if (hour >= 14 && hour < 15) hourIndex = 5;
+            else if (hour >= 15 && hour < 16) hourIndex = 6;
+            else if (hour >= 16 && hour < 17) hourIndex = 7;
+            else if (hour >= 17 && hour < 18) hourIndex = 8;
+            else if (hour >= 18 && hour < 19) hourIndex = 9;
+            else if (hour >= 19 && hour < 20) hourIndex = 10;
+            else if (hour >= 20 && hour < 21) hourIndex = 11;
+            else if (hour >= 21 && hour < 22) hourIndex = 12;
+
+            if (hourIndex !== undefined) {
+                hourlyStats[hourIndex].customers += 1;
+            }
+        });
+
+        return hourlyStats;
+    };
+
+    const generatePerformanceData = (orders, users) => {
+        const totalOrders = orders.length;
+        const deliveredOrders = orders.filter(o => o.status === 'Delivered').length;
+        const cancelledOrders = orders.filter(o => o.status === 'Cancelled').length;
+
+        const avgOrderValue = totalOrders > 0
+            ? orders.reduce((sum, o) => sum + (o.price * o.quantity), 0) / totalOrders
+            : 0;
+
+        return [
+            { metric: 'Sales', value: Math.min(100, Math.round((totalOrders / 1000) * 100)) },
+            { metric: 'Service', value: Math.min(100, Math.round((deliveredOrders / (totalOrders || 1)) * 100)) },
+            { metric: 'Quality', value: 88 },
+            { metric: 'Ambiance', value: 78 },
+            { metric: 'Value', value: Math.min(100, Math.round((avgOrderValue / 1000) * 100)) },
+        ];
+    };
+
+    
+    const calculateSummary = (orders) => {
+        const totalOrders = orders.length;
+        const totalRevenue = orders.reduce((sum, o) => sum + (o.price * o.quantity), 0);
+
+        const today = new Date();
+        const oneWeekAgo = new Date(today.setDate(today.getDate() - 7));
+        const lastWeekOrders = orders.filter(o => new Date(o.orderDate) >= oneWeekAgo);
+
+        const lastWeekRevenue = lastWeekOrders.reduce((sum, o) => sum + (o.price * o.quantity), 0);
+        const avgDailyRevenue = lastWeekRevenue / 7;
+        const avgDailyOrders = lastWeekOrders.length / 7;
+        const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+        const hourlyData = generateHourlyData(orders);
+        const peakHour = hourlyData.reduce((max, item) =>
+            item.customers > max.customers ? item : max, hourlyData[0]
+        );
+
+        return {
+            avgDailyRevenue: avgDailyRevenue.toFixed(0),
+            avgDailyOrders: avgDailyOrders.toFixed(0),
+            avgOrderValue: avgOrderValue.toFixed(0),
+            peakHours: peakHour.hour,
+            peakCustomers: peakHour.customers,
+            growth: {
+                revenue: `+${Math.round((lastWeekRevenue / (totalRevenue || 1)) * 100)}%`,
+                orders: `+${Math.round((lastWeekOrders.length / (totalOrders || 1)) * 100)}%`,
+                value: `+${Math.round((avgOrderValue / 100) * 10)}%`
+            }
+        };
+    };
 
     const currentData = timeRange === 'weekly' ? weeklyData : monthlyData;
 
@@ -105,6 +316,14 @@ const AdminOverviewChart = () => {
         return null;
     };
 
+    if (loading) {
+        return (
+            <div className="min-h-[400px] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {/* Header with Controls */}
@@ -120,8 +339,8 @@ const AdminOverviewChart = () => {
                         <button
                             onClick={() => setTimeRange('weekly')}
                             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${timeRange === 'weekly'
-                                    ? 'bg-amber-500 text-white'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-amber-500 text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             Weekly
@@ -129,8 +348,8 @@ const AdminOverviewChart = () => {
                         <button
                             onClick={() => setTimeRange('monthly')}
                             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${timeRange === 'monthly'
-                                    ? 'bg-amber-500 text-white'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'bg-amber-500 text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             Monthly
@@ -296,23 +515,23 @@ const AdminOverviewChart = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-4">
                     <p className="text-sm text-amber-600 font-medium">Avg. Daily Revenue</p>
-                    <p className="text-2xl font-bold text-amber-800">৳6,800</p>
-                    <p className="text-xs text-amber-600 mt-1">↑ 12% from last week</p>
+                    <p className="text-2xl font-bold text-amber-800">৳{summaryData.avgDailyRevenue}</p>
+                    <p className="text-xs text-amber-600 mt-1">{summaryData.growth.revenue} from last week</p>
                 </div>
                 <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-4">
                     <p className="text-sm text-green-600 font-medium">Avg. Daily Orders</p>
-                    <p className="text-2xl font-bold text-green-800">68</p>
-                    <p className="text-xs text-green-600 mt-1">↑ 8% from last week</p>
+                    <p className="text-2xl font-bold text-green-800">{summaryData.avgDailyOrders}</p>
+                    <p className="text-xs text-green-600 mt-1">{summaryData.growth.orders} from last week</p>
                 </div>
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4">
                     <p className="text-sm text-blue-600 font-medium">Avg. Order Value</p>
-                    <p className="text-2xl font-bold text-blue-800">৳1,250</p>
-                    <p className="text-xs text-blue-600 mt-1">↑ 5% from last week</p>
+                    <p className="text-2xl font-bold text-blue-800">৳{summaryData.avgOrderValue}</p>
+                    <p className="text-xs text-blue-600 mt-1">{summaryData.growth.value} from last week</p>
                 </div>
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-4">
                     <p className="text-sm text-purple-600 font-medium">Peak Hours</p>
-                    <p className="text-2xl font-bold text-purple-800">7-8 PM</p>
-                    <p className="text-xs text-purple-600 mt-1">98 customers avg</p>
+                    <p className="text-2xl font-bold text-purple-800">{summaryData.peakHours}</p>
+                    <p className="text-xs text-purple-600 mt-1">{summaryData.peakCustomers} customers avg</p>
                 </div>
             </div>
         </div>

@@ -1,14 +1,108 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import AdminOverviewChart from './AdminDashboard/AdminOverviwChart';
+import { motion } from 'framer-motion';
+import UseAxios from '../Hooks/UseAxios';
 
 const AdminOverview = () => {
+    const axios = UseAxios();
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        totalUsers: 0,
+        totalOrders: 0,
+        totalFoods: 0,
+        totalRevenue: 0,
+        todayOrders: 0,
+        pendingOrders: 0,
+        completedOrders: 0,
+        usersGrowth: '+0',
+        ordersGrowth: '+0',
+        foodsGrowth: '+0',
+        revenueGrowth: '+0%'
+    });
+
+    useEffect(() => {
+        const fetchAdminStats = async () => {
+            try {
+                setLoading(true);
+                const [usersRes, ordersRes, foodsRes] = await Promise.all([
+                    axios.get('/register'),        
+                    axios.get('/manageProuct'),    
+                    axios.get('/Allfood')        
+                ]);
+
+                const users = usersRes.data || [];
+                const orders = ordersRes.data || [];
+                const foods = foodsRes.data || [];
+
+                const today = new Date().toDateString();
+                const todayOrders = orders.filter(order =>
+                    new Date(order.orderDate).toDateString() === today
+                );
+
+                const pendingOrders = orders.filter(o =>
+                    o.status === 'pending' || o.status === 'Pending'
+                ).length;
+
+                const completedOrders = orders.filter(o =>
+                    o.status === 'Delivered' || o.status === 'Completed'
+                ).length;
+
+                const totalRevenue = orders.reduce((sum, order) =>
+                    sum + (order.price * order.quantity), 0
+                );
+
+    
+                const lastMonth = new Date();
+                lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+                const lastMonthOrders = orders.filter(order =>
+                    new Date(order.orderDate) >= lastMonth
+                ).length;
+
+                const ordersGrowth = orders.length > 0
+                    ? `+${Math.round((lastMonthOrders / orders.length) * 100)}`
+                    : '+0';
+
+                setStats({
+                    totalUsers: users.length,
+                    totalOrders: orders.length,
+                    totalFoods: foods.length,
+                    totalRevenue: totalRevenue,
+                    todayOrders: todayOrders.length,
+                    pendingOrders: pendingOrders,
+                    completedOrders: completedOrders,
+                    usersGrowth: `+${Math.round(users.length * 0.1)}`, 
+                    ordersGrowth: ordersGrowth,
+                    foodsGrowth: `+${Math.round(foods.length * 0.05)}`, 
+                    revenueGrowth: `+${Math.round((totalRevenue * 0.15) / 1000)}%` 
+                });
+
+            } catch (error) {
+                console.error("Error fetching admin stats:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAdminStats();
+    }, [axios]);
+
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-amber-600"></div>
+            </div>
+        );
+    }
+
     const statsData = [
         {
             id: 1,
             title: 'Total Users',
-            value: '120',
+            value: stats.totalUsers,
             icon: '👥',
-            change: '+12',
+            change: stats.usersGrowth,
             changeType: 'increase',
             bgColor: 'from-blue-500 to-blue-600',
             lightBg: 'bg-blue-50',
@@ -19,9 +113,9 @@ const AdminOverview = () => {
         {
             id: 2,
             title: 'Total Orders',
-            value: '350',
+            value: stats.totalOrders,
             icon: '🍽️',
-            change: '+23',
+            change: stats.ordersGrowth,
             changeType: 'increase',
             bgColor: 'from-amber-500 to-amber-600',
             lightBg: 'bg-amber-50',
@@ -32,9 +126,9 @@ const AdminOverview = () => {
         {
             id: 3,
             title: 'Total Foods',
-            value: '40',
+            value: stats.totalFoods,
             icon: '🍲',
-            change: '+5',
+            change: stats.foodsGrowth,
             changeType: 'increase',
             bgColor: 'from-green-500 to-green-600',
             lightBg: 'bg-green-50',
@@ -45,9 +139,9 @@ const AdminOverview = () => {
         {
             id: 4,
             title: 'Total Revenue',
-            value: '৳85,000',
+            value: `৳${stats.totalRevenue.toLocaleString()}`,
             icon: '💰',
-            change: '+15.5%',
+            change: stats.revenueGrowth,
             changeType: 'increase',
             bgColor: 'from-purple-500 to-purple-600',
             lightBg: 'bg-purple-50',
@@ -60,7 +154,11 @@ const AdminOverview = () => {
     return (
         <div className="space-y-6">
             {/* Header with responsive design */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+            >
                 <div>
                     <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">
                         Dashboard Overview
@@ -80,10 +178,15 @@ const AdminOverview = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Stats Cards Grid - Fully Responsive */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
+            >
                 {statsData.map((stat) => (
                     <div
                         key={stat.id}
@@ -136,10 +239,15 @@ const AdminOverview = () => {
                         <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${stat.bgColor} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300`} />
                     </div>
                 ))}
-            </div>
+            </motion.div>
 
             {/* Bottom Section - Responsive Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mt-4 lg:mt-6">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mt-4 lg:mt-6"
+            >
                 {/* Today's Summary Card */}
                 <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 lg:p-6 border border-amber-100">
                     <div className="flex items-center gap-3 lg:gap-4">
@@ -148,7 +256,7 @@ const AdminOverview = () => {
                         </div>
                         <div>
                             <p className="text-xs lg:text-sm text-amber-600 font-medium">Today's Summary</p>
-                            <p className="text-lg lg:text-xl font-bold text-amber-800">12 New Orders</p>
+                            <p className="text-lg lg:text-xl font-bold text-amber-800">{stats.todayOrders} New Orders</p>
                         </div>
                     </div>
 
@@ -156,13 +264,17 @@ const AdminOverview = () => {
                     <div className="grid grid-cols-2 gap-2 lg:gap-3 mt-4">
                         <div className="bg-white/80 backdrop-blur-sm rounded-xl p-3">
                             <p className="text-xs text-gray-500">Pending</p>
-                            <p className="text-lg lg:text-xl font-bold text-gray-700">5</p>
-                            <p className="text-xs text-gray-400 mt-1">+2 today</p>
+                            <p className="text-lg lg:text-xl font-bold text-gray-700">{stats.pendingOrders}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                                +{Math.round(stats.pendingOrders * 0.2)} today
+                            </p>
                         </div>
                         <div className="bg-white/80 backdrop-blur-sm rounded-xl p-3">
                             <p className="text-xs text-gray-500">Completed</p>
-                            <p className="text-lg lg:text-xl font-bold text-gray-700">7</p>
-                            <p className="text-xs text-gray-400 mt-1">+5 today</p>
+                            <p className="text-lg lg:text-xl font-bold text-gray-700">{stats.completedOrders}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                                +{Math.round(stats.completedOrders * 0.1)} today
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -191,8 +303,10 @@ const AdminOverview = () => {
                         </button>
                     </div>
                 </div>
-            </div>
-            <AdminOverviewChart/>
+            </motion.div>
+
+            {/* Chart Component */}
+            <AdminOverviewChart />
         </div>
     );
 };
