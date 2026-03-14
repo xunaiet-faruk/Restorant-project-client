@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
     HiOutlineUser,
     HiOutlineMail,
@@ -11,12 +11,15 @@ import {
     HiOutlineCheck
 } from 'react-icons/hi';
 import { AuthContext } from '../../Authentication/Provider/AuthProbider';
+import UseAxios from '../../Hooks/UseAxios';
 
 const UserProfile = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
-    const {user} =useContext(AuthContext)
+    const { user, updateuserProfile } =useContext(AuthContext)
+    const axios =UseAxios()
 
+    const imgbbApiKey = "0b4acf8aaede9367b12de5e29de2e9ad";
     const [profileData, setProfileData] = useState({
         name: 'John Anderson',
         email: 'john.anderson@example.com',
@@ -28,7 +31,38 @@ const UserProfile = () => {
         memberTier: 'Gold Member'
     });
 
-    const [editForm, setEditForm] = useState({ ...profileData });
+    
+    const [editForm, setEditForm] = useState({
+        name: user?.displayName || "",
+        email: user?.email || "",
+        photo: user?.photoURL || ""
+    });
+
+    useEffect(() => {
+
+        if (user?.email) {
+
+            axios.get(`/user/${user.email}`)
+                .then(res => {
+
+                    const data = res.data
+
+                    setProfileData({
+                        name: data.name,
+                        email: data.email,
+                        photo: data.image
+                    })
+
+                    setEditForm({
+                        name: data.name,
+                        email: data.email,
+                        photo: data.image
+                    })
+
+                })
+        }
+
+    }, [user, axios])
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -38,31 +72,69 @@ const UserProfile = () => {
         }));
     };
 
-    const handleSaveProfile = () => {
-        setProfileData(editForm);
-        setIsEditing(false);
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-    };
+    const handleSaveProfile = async () => {
+
+        try {
+
+            const updateData = {
+                email: user.email,
+                name: editForm.name,
+                photoURL: editForm.photo
+            }
+
+            // MongoDB update
+            const res = await axios.put('/register', updateData)
+
+            console.log(res.data)
+
+            // Firebase update
+            await updateuserProfile(editForm.name, editForm.photo)
+
+            // UI update instantly
+            setProfileData({
+                name: editForm.name,
+                email: user.email,
+                photo: editForm.photo
+            })
+
+            setIsEditing(false)
+            setShowSuccess(true)
+
+            setTimeout(() => {
+                setShowSuccess(false)
+            }, 2000)
+
+        } catch (error) {
+            console.log(error);
+        }
+
+    }
 
     const handleCancelEdit = () => {
         setEditForm(profileData);
         setIsEditing(false);
     };
 
-    const handlePhotoChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setEditForm(prev => ({
-                    ...prev,
-                    photo: reader.result
-                }));
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+    const handlePhotoChange = async (e) => {
+
+        const file = e.target.files[0]
+
+        const formData = new FormData()
+        formData.append("image", file)
+
+        const res = await axios.post(
+            `https://api.imgbb.com/1/upload?key=${imgbbApiKey}`,
+            formData
+        )
+
+        const imageUrl = res.data.data.display_url
+
+        setEditForm(prev => ({
+            ...prev,
+            photo: imageUrl
+        }))
+
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
@@ -118,7 +190,7 @@ const UserProfile = () => {
                             <div className="absolute -bottom-16 left-8">
                                 <div className="relative group">
                                     <img
-                                        src={profileData.photo}
+                                        src={profileData?.photo}
                                         alt="Profile"
                                         className="w-32 h-32 rounded-2xl border-4 border-white shadow-xl object-cover"
                                     />
@@ -160,7 +232,7 @@ const UserProfile = () => {
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500 mb-1">Full Name</p>
-                                            <p className="text-lg font-semibold text-gray-900">{user?.displayName}</p>
+                                            <p className="text-lg font-semibold text-gray-900">{profileData?.name}</p>
                                         </div>
                                     </div>
 
@@ -208,7 +280,7 @@ const UserProfile = () => {
                                 <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6 mb-8">
                                     <div className="relative group">
                                         <img
-                                            src={user.photo}
+                                                src={editForm?.photo}
                                             alt="Profile"
                                             className="w-32 h-32 rounded-2xl border-4 border-orange-200 shadow-xl object-cover"
                                         />
@@ -265,37 +337,9 @@ const UserProfile = () => {
                                         <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
                                     </div>
 
-                                    {/* Phone */}
-                                    <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            <HiOutlinePhone className="inline mr-2 text-green-600" />
-                                            Phone Number
-                                        </label>
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            value={editForm.phone}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                            placeholder="Enter your phone number"
-                                        />
-                                    </div>
+                                   
 
-                                    {/* Address */}
-                                    <div className="md:col-span-2 space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700">
-                                            <HiOutlineLocationMarker className="inline mr-2 text-purple-600" />
-                                            Delivery Address
-                                        </label>
-                                        <textarea
-                                            name="address"
-                                            value={editForm.address}
-                                            onChange={handleInputChange}
-                                            rows="3"
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                                            placeholder="Enter your full address"
-                                        />
-                                    </div>
+                                   
                                 </div>
 
                                 {/* Form Actions */}
