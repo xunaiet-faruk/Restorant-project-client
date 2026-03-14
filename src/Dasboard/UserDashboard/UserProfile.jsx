@@ -18,6 +18,7 @@ const UserProfile = () => {
     const [showSuccess, setShowSuccess] = useState(false);
     const { user, updateuserProfile } =useContext(AuthContext)
     const axios =UseAxios()
+    const [uploading, setUploading] = useState(false)
 
     const imgbbApiKey = "0b4acf8aaede9367b12de5e29de2e9ad";
     const [profileData, setProfileData] = useState({
@@ -82,15 +83,11 @@ const UserProfile = () => {
                 photoURL: editForm.photo
             }
 
-            // MongoDB update
             const res = await axios.put('/register', updateData)
 
             console.log(res.data)
-
-            // Firebase update
             await updateuserProfile(editForm.name, editForm.photo)
 
-            // UI update instantly
             setProfileData({
                 name: editForm.name,
                 email: user.email,
@@ -118,21 +115,32 @@ const UserProfile = () => {
     const handlePhotoChange = async (e) => {
 
         const file = e.target.files[0]
+        if (!file) return;
 
-        const formData = new FormData()
-        formData.append("image", file)
+        try {
 
-        const res = await axios.post(
-            `https://api.imgbb.com/1/upload?key=${imgbbApiKey}`,
-            formData
-        )
+            setUploading(true)
 
-        const imageUrl = res.data.data.display_url
+            const formData = new FormData()
+            formData.append("image", file)
 
-        setEditForm(prev => ({
-            ...prev,
-            photo: imageUrl
-        }))
+            const res = await axios.post(
+                `https://api.imgbb.com/1/upload?key=${imgbbApiKey}`,
+                formData
+            )
+
+            const imageUrl = res.data.data.display_url
+
+            setEditForm(prev => ({
+                ...prev,
+                photo: imageUrl
+            }))
+
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setUploading(false)
+        }
 
     }
 
@@ -214,11 +222,11 @@ const UserProfile = () => {
                                         <p className="text-sm text-gray-600">Total Orders</p>
                                     </div>
                                     <div className="bg-blue-50 rounded-xl p-4 text-center">
-                                        <p className="text-2xl font-bold text-blue-600">{profileData.memberTier}</p>
+                                        <p className="text-2xl font-bold text-blue-600">Gold Memeber</p>
                                         <p className="text-sm text-gray-600">Membership</p>
                                     </div>
                                     <div className="bg-purple-50 rounded-xl p-4 text-center">
-                                        <p className="text-2xl font-bold text-purple-600">{profileData.joinDate}</p>
+                                        <p className="text-sm font- text-purple-600">{user?.metadata.creationTime}</p>
                                         <p className="text-sm text-gray-600">Joined</p>
                                     </div>
                                 </div>
@@ -255,7 +263,7 @@ const UserProfile = () => {
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500 mb-1">Phone Number</p>
-                                            <p className="text-lg font-semibold text-gray-900">{profileData.phone}</p>
+                                            <p className="text-lg font-semibold text-gray-900">+01882239828</p>
                                         </div>
                                     </div>
 
@@ -266,7 +274,7 @@ const UserProfile = () => {
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-500 mb-1">Delivery Address</p>
-                                            <p className="text-lg font-semibold text-gray-900">{profileData.address}</p>
+                                            <p className="text-lg font-semibold text-gray-900">Raozan,Sultanpor ,Chittagong</p>
                                         </div>
                                     </div>
                                 </div>
@@ -278,22 +286,31 @@ const UserProfile = () => {
                             <div className="space-y-6">
                                 {/* Photo Upload */}
                                 <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6 mb-8">
-                                    <div className="relative group">
-                                        <img
+                                        <div className="relative group">
+
+                                            <img
                                                 src={editForm?.photo}
-                                            alt="Profile"
-                                            className="w-32 h-32 rounded-2xl border-4 border-orange-200 shadow-xl object-cover"
-                                        />
-                                        <label className="absolute bottom-0 right-0 bg-orange-600 p-2 rounded-full cursor-pointer hover:bg-orange-700 transition-colors shadow-lg">
-                                            <HiOutlineCamera className="w-5 h-5 text-white" />
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                className="hidden"
-                                                onChange={handlePhotoChange}
+                                                alt="Profile"
+                                                className="w-32 h-32 rounded-2xl border-4 border-orange-200 shadow-xl object-cover"
                                             />
-                                        </label>
-                                    </div>
+
+                                            {uploading && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl">
+                                                    <span className="loading loading-spinner loading-lg text-white"></span>
+                                                </div>
+                                            )}
+
+                                            <label className="absolute bottom-0 right-0 bg-orange-600 p-2 rounded-full cursor-pointer hover:bg-orange-700 transition-colors shadow-lg">
+                                                <HiOutlineCamera className="w-5 h-5 text-white" />
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={handlePhotoChange}
+                                                />
+                                            </label>
+
+                                        </div>
                                     <div className="flex-1">
                                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Photo</h3>
                                         <p className="text-sm text-gray-500 mb-3">Upload a new profile picture. Recommended size: 300x300px</p>
