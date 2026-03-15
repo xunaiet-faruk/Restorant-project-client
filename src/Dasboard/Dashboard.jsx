@@ -3,24 +3,34 @@ import { useContext, useState } from "react";
 import './dashboard.css'
 import { AuthContext } from "../Authentication/Provider/AuthProbider";
 import { FiUser } from "react-icons/fi";
+import UseRole from "../Authentication/RolebaseAccess/UseRole";
 
-// Icons (you can replace with your preferred icon library)
 const Dashboard = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { user } = useContext(AuthContext)
+    const [role, roleLoading] =UseRole();
 
-    const navigationItems = [
-        { path: '/dashboard', name: 'Overview', icon: '📊', end: true },
-        { path: '/dashboard/addfood', name: 'Add-Food', icon: '➕', end: true },
-        { path: '/dashboard/manageFood', name: 'Manage-Food', icon: '📋', end: true },
-        { path: '/dashboard/manageorders', name: 'Manage-Orders', icon: '📦', end: true },
-        { path: '/dashboard/manageusers', name: 'Manage-Users', icon: '👥', end: true },
+    if (roleLoading) {
+        return <div className="text-center mt-20">Loading...</div>;
+    }
+
+    const userMenu = [
         { path: '/dashboard/userHome', name: 'User-Home', icon: '🏠', end: true },
         { path: '/dashboard/userProfile', name: 'Your-Profile', icon: '👤', end: true },
         { path: '/dashboard/myorders', name: 'My-Orders', icon: '📦', end: true },
         { path: '/dashboard/payment', name: 'Payment', icon: '💳', end: true },
         { path: '/dashboard/payment-history', name: 'Payment-History', icon: '📜', end: true },
     ];
+
+    const adminMenu = [
+        { path: '/dashboard', name: 'Overview', icon: '📊', end: true },
+        { path: '/dashboard/addfood', name: 'Add-Food', icon: '➕', end: true },
+        { path: '/dashboard/manageFood', name: 'Manage-Food', icon: '📋', end: true },
+        { path: '/dashboard/manageorders', name: 'Manage-Orders', icon: '📦', end: true },
+        { path: '/dashboard/manageusers', name: 'Manage-Users', icon: '👥', end: true },
+    ];
+
+    const navigationItems= role === "Admin" ? adminMenu : userMenu;
 
     return (
         <div className="min-h-screen bg-gray-50">

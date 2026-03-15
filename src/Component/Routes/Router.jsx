@@ -20,6 +20,8 @@ import UserProfile from "../../Dasboard/UserDashboard/UserProfile";
 import MyOrders from "../../Dasboard/UserDashboard/MyOrders";
 import PaymentHistory from "../../Dasboard/UserDashboard/PaymentHistory";
 import Pay from "../../Dasboard/UserDashboard/Pay";
+import AdminRote from "../../Authentication/RolebaseAccess/AdminRote";
+import UserRoute from "../../Authentication/RolebaseAccess/UseRoute";
 
 
 const router = createBrowserRouter([
@@ -55,49 +57,62 @@ const router = createBrowserRouter([
        
     },
     {
-        path : '/dashboard',
-        element : <Dashboard/>,
-        children : [
+        path: '/dashboard',
+        element: <Dashboard />,
+        children: [
+
+            // admin dashboard
             {
-                path:'',
-                element : <AdminOverview/>
+                path: 'admin',
+                element: <AdminRote><AdminOverview /></AdminRote>
             },
+
             {
-                path:'addfood',
-                element : <Addfood/>
+                path: 'addfood',
+                element: <AdminRote><Addfood /></AdminRote>
             },
+
             {
-                path:'manageFood',
-                element : <ManageFood/>
+                path: 'manageFood',
+                element: <AdminRote><ManageFood /></AdminRote>
             },
+
             {
-                path:'manageorders',
-                element : <ManageOrder/>
+                path: 'manageorders',
+                element: <AdminRote><ManageOrder /></AdminRote>
             },
+
             {
-                path:'manageusers',
-                element : <ManageUsers/>
+                path: 'manageusers',
+                element: <AdminRote><ManageUsers /></AdminRote>
             },
+
+            // user dashboard
             {
-                path:'userHome',
-                element : <UserHome/>
+                path: 'userHome',
+                element: <UserRoute><UserHome /></UserRoute>
             },
+
             {
-                path:'userProfile',
-                element : <UserProfile/>
+                path: 'userProfile',
+                element: <UserRoute><UserProfile /></UserRoute>
             },
+
             {
-                path:'myorders',
-                element : <MyOrders/>
+                path: 'myorders',
+                element: <UserRoute><MyOrders /></UserRoute>
             },
+
             {
-                path:'payment-history',
-                element : <PaymentHistory/>
+                path: 'payment-history',
+                element: <UserRoute><PaymentHistory /></UserRoute>
             },
+
             {
-                path:'payment',
-                element : <Pay/>
+                path: 'payment',
+                element: <UserRoute><Pay /></UserRoute>
             }
+
         ]
     }
 ]);
