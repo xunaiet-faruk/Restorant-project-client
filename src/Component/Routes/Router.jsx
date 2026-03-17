@@ -22,6 +22,8 @@ import PaymentHistory from "../../Dasboard/UserDashboard/PaymentHistory";
 import Pay from "../../Dasboard/UserDashboard/Pay";
 import AdminRote from "../../Authentication/RolebaseAccess/AdminRote";
 import UserRoute from "../../Authentication/RolebaseAccess/UseRoute";
+import Paysuccess from "../../Dasboard/UserDashboard/Paysuccess";
+import Payfail from "../../Dasboard/UserDashboard/Payfail";
 
 
 const router = createBrowserRouter([
@@ -63,7 +65,7 @@ const router = createBrowserRouter([
 
             // admin dashboard
             {
-                path: 'admin',
+                path: '',
                 element: <AdminRote><AdminOverview /></AdminRote>
             },
 
@@ -111,6 +113,14 @@ const router = createBrowserRouter([
             {
                 path: 'payment',
                 element: <UserRoute><Pay /></UserRoute>
+            },
+            {
+                path: 'payment/success/:tranID',
+                element: <UserRoute><Paysuccess/></UserRoute>
+            },
+            {
+                path: 'payment/fail/:tranID',
+                element: <UserRoute><Payfail/></UserRoute>
             }
 
         ]

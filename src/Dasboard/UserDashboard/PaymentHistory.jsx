@@ -1,514 +1,349 @@
-import React from 'react';
+import React, { useContext, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-    HiOutlineCreditCard,
-    HiOutlineCurrencyDollar,
-    HiOutlineCalendar,
-    HiOutlineReceiptRefund,
-    HiOutlineDownload,
-    HiOutlineMail,
-    HiOutlinePrinter,
-    HiOutlineCheckCircle,
-    HiOutlineXCircle,
-    HiOutlineClock
-} from 'react-icons/hi';
-import {
-    BsWallet2,
-    BsPaypal,
-    BsApple,
-    BsGoogle,
-    BsBank2
-} from 'react-icons/bs';
-import {
-    FaCcVisa,
-    FaCcMastercard,
-    FaCcAmex,
-    FaCcDiscover
+    FaHistory, FaShoppingBag, FaCalendarAlt,
+    FaMoneyBillWave, FaCheckCircle, FaEye,
+    FaDownload, FaPrint, FaArrowRight,
+    FaWallet, FaClock
 } from 'react-icons/fa';
-import { SiStripe, SiRazorpay } from 'react-icons/si';
+import { AuthContext } from '../../Authentication/Provider/AuthProbider';
+import UseAxios from '../../Hooks/UseAxios';
+import { useNavigate } from 'react-router-dom';
 
 const PaymentHistory = () => {
-    // Sample payment data
-    const payments = [
-        {
-            id: '#PAY-12345',
-            date: '15 Jan 2024',
-            time: '10:30 AM',
-            orderId: '#12345',
-            restaurant: 'Burger House',
-            amount: 800,
-            paymentMethod: 'Visa',
-            paymentIcon: FaCcVisa,
-            status: 'Success',
-            transactionId: 'TXN789012345',
-            cardLast4: '4242'
-        },
-        {
-            id: '#PAY-12344',
-            date: '14 Jan 2024',
-            time: '7:45 PM',
-            orderId: '#12344',
-            restaurant: 'Sushi Master',
-            amount: 420,
-            paymentMethod: 'PayPal',
-            paymentIcon: BsPaypal,
-            status: 'Success',
-            transactionId: 'TXN789012346',
-            email: 'user@example.com'
-        },
-        {
-            id: '#PAY-12343',
-            date: '14 Jan 2024',
-            time: '12:15 PM',
-            orderId: '#12343',
-            restaurant: 'Fast Food Express',
-            amount: 530,
-            paymentMethod: 'Mastercard',
-            paymentIcon: FaCcMastercard,
-            status: 'Success',
-            transactionId: 'TXN789012347',
-            cardLast4: '5678'
-        },
-        {
-            id: '#PAY-12342',
-            date: '13 Jan 2024',
-            time: '8:00 PM',
-            orderId: '#12342',
-            restaurant: 'Pizza Heaven',
-            amount: 520,
-            paymentMethod: 'Google Pay',
-            paymentIcon: BsGoogle,
-            status: 'Pending',
-            transactionId: 'TXN789012348'
-        },
-        {
-            id: '#PAY-12341',
-            date: '12 Jan 2024',
-            time: '6:30 PM',
-            orderId: '#12341',
-            restaurant: 'Sushi Master',
-            amount: 620,
-            paymentMethod: 'Apple Pay',
-            paymentIcon: BsApple,
-            status: 'Success',
-            transactionId: 'TXN789012349'
-        },
-        {
-            id: '#PAY-12340',
-            date: '11 Jan 2024',
-            time: '11:00 AM',
-            orderId: '#12340',
-            restaurant: 'Cafe Delight',
-            amount: 600,
-            paymentMethod: 'Stripe',
-            paymentIcon: SiStripe,
-            status: 'Failed',
-            transactionId: 'TXN789012350',
-            errorMessage: 'Insufficient funds'
-        },
-        {
-            id: '#PAY-12339',
-            date: '10 Jan 2024',
-            time: '7:30 PM',
-            orderId: '#12339',
-            restaurant: 'Grill House',
-            amount: 620,
-            paymentMethod: 'American Express',
-            paymentIcon: FaCcAmex,
-            status: 'Refunded',
-            transactionId: 'TXN789012351',
-            cardLast4: '9012',
-            refundDate: '11 Jan 2024'
-        },
-        {
-            id: '#PAY-12338',
-            date: '09 Jan 2024',
-            time: '1:15 PM',
-            orderId: '#12338',
-            restaurant: 'Taco Fiesta',
-            amount: 380,
-            paymentMethod: 'Discover',
-            paymentIcon: FaCcDiscover,
-            status: 'Success',
-            transactionId: 'TXN789012352',
-            cardLast4: '3456'
-        },
-        {
-            id: '#PAY-12337',
-            date: '08 Jan 2024',
-            time: '6:45 PM',
-            orderId: '#12337',
-            restaurant: 'Pasta Paradise',
-            amount: 750,
-            paymentMethod: 'Bank Transfer',
-            paymentIcon: BsBank2,
-            status: 'Success',
-            transactionId: 'TXN789012353'
-        },
-        {
-            id: '#PAY-12336',
-            date: '07 Jan 2024',
-            time: '9:20 AM',
-            orderId: '#12336',
-            restaurant: 'Breakfast Club',
-            amount: 280,
-            paymentMethod: 'Razorpay',
-            paymentIcon: SiRazorpay,
-            status: 'Success',
-            transactionId: 'TXN789012354'
-        }
-    ];
+    const { user } = useContext(AuthContext);
+    const axios = UseAxios();
+    const navigate = useNavigate();
+    const [payments, setPayments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState('all'); // all, lastMonth, last3Months
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'Success':
-                return {
-                    bg: 'bg-green-100',
-                    text: 'text-green-700',
-                    border: 'border-green-200',
-                    icon: HiOutlineCheckCircle
-                };
-            case 'Pending':
-                return {
-                    bg: 'bg-yellow-100',
-                    text: 'text-yellow-700',
-                    border: 'border-yellow-200',
-                    icon: HiOutlineClock
-                };
-            case 'Failed':
-                return {
-                    bg: 'bg-red-100',
-                    text: 'text-red-700',
-                    border: 'border-red-200',
-                    icon: HiOutlineXCircle
-                };
-            case 'Refunded':
-                return {
-                    bg: 'bg-purple-100',
-                    text: 'text-purple-700',
-                    border: 'border-purple-200',
-                    icon: HiOutlineReceiptRefund
-                };
-            default:
-                return {
-                    bg: 'bg-gray-100',
-                    text: 'text-gray-700',
-                    border: 'border-gray-200',
-                    icon: HiOutlineClock
-                };
-        }
-    };
+    useEffect(() => {
+        const fetchPaymentHistory = async () => {
+            if (!user?.email) {
+                setLoading(false);
+                return;
+            }
 
-    const formatAmount = (amount) => {
-        return amount.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+            try {
+                setLoading(true);
+
+                // Fetch delivered orders from BuyCollection
+                const ordersRes = await axios.get(`/buyFood/${user.email}`);
+                const deliveredOrders = ordersRes.data.filter(order => order.status === 'Delivered');
+
+                // Group orders by transaction ID
+                const groupedPayments = deliveredOrders.reduce((acc, order) => {
+                    const transId = order.transactionId || 'N/A';
+                    if (!acc[transId]) {
+                        acc[transId] = {
+                            transactionId: transId,
+                            date: order.paymentDate || order.orderDate,
+                            items: [],
+                            total: 0,
+                            status: order.status
+                        };
+                    }
+                    acc[transId].items.push({
+                        name: order.name,
+                        quantity: order.quantity,
+                        price: order.price,
+                        foodId: order.foodId
+                    });
+                    acc[transId].total += order.price * order.quantity;
+                    return acc;
+                }, {});
+
+                const formattedPayments = Object.values(groupedPayments).sort((a, b) =>
+                    new Date(b.date) - new Date(a.date)
+                );
+
+                setPayments(formattedPayments);
+
+            } catch (error) {
+                console.error("Error fetching payment history:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPaymentHistory();
+    }, [user?.email, axios]);
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
     };
 
+    const filterPayments = () => {
+        const now = new Date();
+        const lastMonth = new Date(now.setMonth(now.getMonth() - 1));
+        const last3Months = new Date(now.setMonth(now.getMonth() - 2));
+
+        switch (filter) {
+            case 'lastMonth':
+                return payments.filter(p => new Date(p.date) >= lastMonth);
+            case 'last3Months':
+                return payments.filter(p => new Date(p.date) >= last3Months);
+            default:
+                return payments;
+        }
+    };
+
+    const filteredPayments = filterPayments();
+    const totalSpent = filteredPayments.reduce((sum, payment) => sum + payment.total, 0);
+    const totalOrders = filteredPayments.reduce((sum, payment) => sum + payment.items.length, 0);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-8">
-            <div className="max-w-7xl mx-auto">
-                {/* Header Section */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-4 mb-3">
-                        <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg shadow-purple-500/30">
-                            <HiOutlineCreditCard className="w-6 h-6 text-white" />
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-amber-50 p-4 md:p-8">
+            {/* Header */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-7xl mx-auto mb-8"
+            >
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center">
+                            <FaHistory className="text-2xl text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-                                Payment History
+                            <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+                                Payment <span className="text-amber-500">History</span>
                             </h1>
-                            <p className="text-gray-500 mt-1">
-                                Track all your transactions and payment details
+                            <p className="text-gray-500">
+                                View all your completed payments and orders
                             </p>
                         </div>
                     </div>
+
+                    {/* Filter Dropdown */}
+                    <select
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        className="px-4 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                        <option value="all">All Time</option>
+                        <option value="lastMonth">Last Month</option>
+                        <option value="last3Months">Last 3 Months</option>
+                    </select>
                 </div>
+            </motion.div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all border border-gray-100">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                                <HiOutlineCreditCard className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Total Transactions</p>
-                                <p className="text-2xl font-bold text-gray-900">{payments.length}</p>
-                            </div>
+            {/* Stats Cards */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+            >
+                <div className="bg-white rounded-2xl p-6 shadow-lg border border-amber-100">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500">Total Payments</p>
+                            <p className="text-3xl font-bold text-gray-800">{filteredPayments.length}</p>
                         </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all border border-gray-100">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <HiOutlineCurrencyDollar className="w-5 h-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Total Spent</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    ${formatAmount(payments.reduce((acc, p) => acc + (p.status === 'Success' ? p.amount : 0), 0))}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all border border-gray-100">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <HiOutlineCheckCircle className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Successful</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {payments.filter(p => p.status === 'Success').length}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-all border border-gray-100">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                                <HiOutlineReceiptRefund className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Refunded</p>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {payments.filter(p => p.status === 'Refunded').length}
-                                </p>
-                            </div>
+                        <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                            <FaWallet className="text-2xl text-amber-500" />
                         </div>
                     </div>
                 </div>
 
-                {/* Payment Methods Summary */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-8">
-                    {[
-                        { icon: FaCcVisa, name: 'Visa', count: 3, color: 'text-blue-600' },
-                        { icon: FaCcMastercard, name: 'Mastercard', count: 2, color: 'text-orange-600' },
-                        { icon: BsPaypal, name: 'PayPal', count: 1, color: 'text-blue-700' },
-                        { icon: BsGoogle, name: 'Google Pay', count: 1, color: 'text-green-600' },
-                        { icon: BsApple, name: 'Apple Pay', count: 1, color: 'text-gray-800' },
-                        { icon: SiStripe, name: 'Stripe', count: 1, color: 'text-purple-600' }
-                    ].map((method, index) => (
-                        <div key={index} className="bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition-all border border-gray-100 text-center group">
-                            <method.icon className={`w-6 h-6 ${method.color} mx-auto mb-1 group-hover:scale-110 transition-transform`} />
-                            <p className="text-xs text-gray-500">{method.name}</p>
-                            <p className="text-sm font-semibold text-gray-900">{method.count} used</p>
+                <div className="bg-white rounded-2xl p-6 shadow-lg border border-amber-100">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500">Total Items</p>
+                            <p className="text-3xl font-bold text-gray-800">{totalOrders}</p>
                         </div>
-                    ))}
-                </div>
-
-                {/* Payment History Table */}
-                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                    {/* Table Header */}
-                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-800">Transaction History</h2>
-                            <div className="flex gap-2">
-                                <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-sm text-gray-600 hover:bg-purple-600 hover:text-white transition-all">
-                                    <HiOutlineDownload className="w-4 h-4" />
-                                    Export
-                                </button>
-                                <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl text-sm text-gray-600 hover:bg-purple-600 hover:text-white transition-all">
-                                    <HiOutlinePrinter className="w-4 h-4" />
-                                    Print
-                                </button>
-                            </div>
+                        <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                            <FaShoppingBag className="text-2xl text-amber-500" />
                         </div>
                     </div>
+                </div>
 
-                    {/* Table */}
+                <div className="bg-white rounded-2xl p-6 shadow-lg border border-amber-100">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500">Total Spent</p>
+                            <p className="text-3xl font-bold text-amber-500">৳{totalSpent.toFixed(2)}</p>
+                        </div>
+                        <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                            <FaMoneyBillWave className="text-2xl text-amber-500" />
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* Payment History Table */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="max-w-7xl mx-auto"
+            >
+                <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead>
-                                <tr className="bg-gray-50">
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Payment ID</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date & Time</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Order ID</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Restaurant</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Payment Method</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                            <thead className="bg-gradient-to-r from-amber-500 to-amber-600 text-white">
+                                <tr>
+                                    <th className="p-4 text-left">#</th>
+                                    <th className="p-4 text-left">Transaction ID</th>
+                                    <th className="p-4 text-left">Date & Time</th>
+                                    <th className="p-4 text-left">Items</th>
+                                    <th className="p-4 text-left">Quantity</th>
+                                    <th className="p-4 text-left">Total</th>
+                                    <th className="p-4 text-left">Status</th>
+                                    <th className="p-4 text-left">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {payments.map((payment) => {
-                                    const statusStyle = getStatusColor(payment.status);
-                                    const StatusIcon = statusStyle.icon;
-                                    const PaymentIcon = payment.paymentIcon;
-
-                                    return (
-                                        <tr key={payment.id} className="hover:bg-purple-50/30 transition-colors group">
-                                            {/* Payment ID */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                        <HiOutlineCreditCard className="w-5 h-5 text-purple-600" />
-                                                    </div>
-                                                    <span className="font-medium text-gray-900">{payment.id}</span>
-                                                </div>
-                                            </td>
-
-                                            {/* Date & Time */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <HiOutlineCalendar className="w-4 h-4 text-gray-400" />
-                                                    <div>
-                                                        <p className="text-sm font-medium text-gray-900">{payment.date}</p>
-                                                        <p className="text-xs text-gray-500">{payment.time}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {/* Order ID */}
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm font-medium text-gray-900 bg-gray-100 px-3 py-1.5 rounded-lg">
-                                                    {payment.orderId}
+                            <tbody>
+                                {filteredPayments.length > 0 ? (
+                                    filteredPayments.map((payment, index) => (
+                                        <motion.tr
+                                            key={payment.transactionId}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                            className="border-t hover:bg-amber-50 transition-colors"
+                                        >
+                                            <td className="p-4 font-medium text-gray-600">{index + 1}</td>
+                                            <td className="p-4">
+                                                <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                                                    {payment.transactionId.slice(-10)}
                                                 </span>
                                             </td>
-
-                                            {/* Restaurant */}
-                                            <td className="px-6 py-4">
-                                                <p className="text-sm text-gray-700">{payment.restaurant}</p>
-                                            </td>
-
-                                            {/* Payment Method */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <PaymentIcon className="w-5 h-5 text-gray-600" />
-                                                    <div>
-                                                        <p className="text-sm font-medium text-gray-900">{payment.paymentMethod}</p>
-                                                        {payment.cardLast4 && (
-                                                            <p className="text-xs text-gray-500">•••• {payment.cardLast4}</p>
-                                                        )}
-                                                        {payment.email && (
-                                                            <p className="text-xs text-gray-500">{payment.email}</p>
-                                                        )}
-                                                    </div>
+                                            <td className="p-4">
+                                                <div className="flex items-center gap-2 text-gray-600">
+                                                    <FaCalendarAlt className="text-amber-400" />
+                                                    <span className="text-sm">{formatDate(payment.date)}</span>
                                                 </div>
                                             </td>
-
-                                            {/* Amount */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-1">
-                                                    <HiOutlineCurrencyDollar className="w-4 h-4 text-gray-400" />
-                                                    <span className="font-semibold text-gray-900">
-                                                        ${formatAmount(payment.amount)}
-                                                    </span>
+                                            <td className="p-4">
+                                                <div className="space-y-1">
+                                                    {payment.items.map((item, i) => (
+                                                        <div key={i} className="text-sm font-medium text-gray-800">
+                                                            {item.name}
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </td>
-
-                                            {/* Status */}
-                                            <td className="px-6 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-                                                    <StatusIcon className="w-3.5 h-3.5" />
+                                            <td className="p-4">
+                                                <div className="space-y-1">
+                                                    {payment.items.map((item, i) => (
+                                                        <div key={i} className="text-sm text-gray-600">
+                                                            x{item.quantity}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                            <td className="p-4">
+                                                <span className="font-bold text-amber-600">
+                                                    ৳{payment.total}
+                                                </span>
+                                            </td>
+                                            <td className="p-4">
+                                                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
+                                                    <FaCheckCircle className="text-xs" />
                                                     {payment.status}
                                                 </span>
-                                                {payment.refundDate && (
-                                                    <p className="text-xs text-gray-500 mt-1">Refunded: {payment.refundDate}</p>
-                                                )}
-                                                {payment.errorMessage && (
-                                                    <p className="text-xs text-red-500 mt-1">{payment.errorMessage}</p>
-                                                )}
                                             </td>
-
-                                            {/* Actions */}
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <button className="p-2 hover:bg-purple-100 rounded-lg transition-colors group" title="View Details">
-                                                        <HiOutlineCreditCard className="w-4 h-4 text-gray-500 group-hover:text-purple-600" />
+                                            <td className="p-4">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => navigate(`/payment/success/${payment.transactionId}`)}
+                                                        className="p-2 bg-amber-100 rounded-lg hover:bg-amber-200 transition-colors group"
+                                                        title="View Details"
+                                                    >
+                                                        <FaEye className="text-amber-600 group-hover:scale-110 transition-transform" />
                                                     </button>
-                                                    <button className="p-2 hover:bg-purple-100 rounded-lg transition-colors group" title="Download Receipt">
-                                                        <HiOutlineDownload className="w-4 h-4 text-gray-500 group-hover:text-purple-600" />
-                                                    </button>
-                                                    <button className="p-2 hover:bg-purple-100 rounded-lg transition-colors group" title="Email Receipt">
-                                                        <HiOutlineMail className="w-4 h-4 text-gray-500 group-hover:text-purple-600" />
+                                                    <button
+                                                        className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors group"
+                                                        title="Download Receipt"
+                                                    >
+                                                        <FaDownload className="text-gray-600 group-hover:scale-110 transition-transform" />
                                                     </button>
                                                 </div>
                                             </td>
-                                        </tr>
-                                    );
-                                })}
+                                        </motion.tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="8" className="p-12 text-center">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+                                                    <FaHistory className="w-8 h-8 text-gray-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-gray-600 text-lg font-medium">No payment history found</p>
+                                                    <p className="text-gray-400 text-sm mt-1">You haven't made any payments yet</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => navigate('/menu')}
+                                                    className="mt-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl font-medium flex items-center gap-2 hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg shadow-amber-200"
+                                                >
+                                                    Browse Menu
+                                                    <FaArrowRight className="text-sm" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
 
-                    {/* Table Footer */}
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-500">
-                                Showing <span className="font-medium text-gray-700">1-{payments.length}</span> of <span className="font-medium text-gray-700">{payments.length}</span> transactions
-                            </p>
-                            <div className="flex gap-2">
-                                <button className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition-all">
-                                    Previous
-                                </button>
-                                <button className="px-4 py-2 bg-purple-600 text-white rounded-xl text-sm hover:bg-purple-700 transition-all">
-                                    1
-                                </button>
-                                <button className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition-all">
-                                    2
-                                </button>
-                                <button className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition-all">
-                                    3
-                                </button>
-                                <button className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-purple-600 hover:text-white hover:border-purple-600 transition-all">
-                                    Next
-                                </button>
+                    {/* Footer Summary */}
+                    {filteredPayments.length > 0 && (
+                        <div className="p-6 bg-gray-50 border-t">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="bg-white rounded-xl p-4 shadow-sm">
+                                    <p className="text-xs text-gray-500 mb-1">Average Order Value</p>
+                                    <p className="text-xl font-bold text-gray-800">
+                                        ৳{(totalSpent / filteredPayments.length).toFixed(2)}
+                                    </p>
+                                </div>
+                                <div className="bg-white rounded-xl p-4 shadow-sm">
+                                    <p className="text-xs text-gray-500 mb-1">Most Ordered</p>
+                                    <p className="text-xl font-bold text-gray-800">
+                                        {(() => {
+                                            const items = filteredPayments.flatMap(p => p.items);
+                                            const counts = items.reduce((acc, item) => {
+                                                acc[item.name] = (acc[item.name] || 0) + 1;
+                                                return acc;
+                                            }, {});
+                                            const mostOrdered = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+                                            return mostOrdered ? mostOrdered[0].slice(0, 15) + '...' : 'N/A';
+                                        })()}
+                                    </p>
+                                </div>
+                                <div className="bg-white rounded-xl p-4 shadow-sm">
+                                    <p className="text-xs text-gray-500 mb-1">Last Payment</p>
+                                    <p className="text-xl font-bold text-gray-800">
+                                        {filteredPayments.length > 0 ? formatDate(filteredPayments[0].date).split(',')[0] : 'N/A'}
+                                    </p>
+                                </div>
+                                <div className="bg-white rounded-xl p-4 shadow-sm">
+                                    <p className="text-xs text-gray-500 mb-1">Payment Methods</p>
+                                    <p className="text-xl font-bold text-gray-800">SSLCommerz</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
-
-                {/* Recent Transactions Summary */}
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Methods</h3>
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                    <FaCcVisa className="w-8 h-8 text-blue-600" />
-                                    <div>
-                                        <p className="font-medium text-gray-900">Visa ending in 4242</p>
-                                        <p className="text-xs text-gray-500">Expires 12/25</p>
-                                    </div>
-                                </div>
-                                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Default</span>
-                            </div>
-                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div className="flex items-center gap-3">
-                                    <BsPaypal className="w-8 h-8 text-blue-700" />
-                                    <div>
-                                        <p className="font-medium text-gray-900">PayPal</p>
-                                        <p className="text-xs text-gray-500">user@example.com</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Refunds</h3>
-                        <div className="space-y-3">
-                            {payments.filter(p => p.status === 'Refunded').map((payment, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                    <div>
-                                        <p className="font-medium text-gray-900">{payment.orderId}</p>
-                                        <p className="text-xs text-gray-500">{payment.restaurant}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-semibold text-purple-600">${formatAmount(payment.amount)}</p>
-                                        <p className="text-xs text-gray-500">{payment.refundDate}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

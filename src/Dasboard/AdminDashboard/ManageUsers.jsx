@@ -70,7 +70,7 @@ const ManageUsers = () => {
                 console.log("Make admin response:", response.data);
 
                 if (response.data.success || response.data.modifiedCount > 0) {
-                    // Update local state
+               
                     setUsers(prevUsers =>
                         prevUsers.map(user =>
                             user._id === userId
@@ -79,12 +79,12 @@ const ManageUsers = () => {
                         )
                     );
 
-                    // Also update selectedUser if modal is open
+                    
                     if (selectedUser && selectedUser._id === userId) {
                         setSelectedUser(prev => ({ ...prev, role: 'Admin' }));
                     }
 
-                    // Show success message
+                 
                     Swal.fire({
                         icon: 'success',
                         title: 'Success!',
@@ -125,13 +125,11 @@ const ManageUsers = () => {
         }
     };
 
-    // Handle view profile
     const handleViewProfile = (user) => {
         setSelectedUser(user);
         setShowProfileModal(true);
     };
 
-    // Get role badge color
     const getRoleBadge = (role) => {
         switch (role) {
             case 'Admin':

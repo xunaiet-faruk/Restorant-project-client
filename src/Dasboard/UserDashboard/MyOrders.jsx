@@ -85,8 +85,10 @@ const MyOrders = () => {
                         hour: '2-digit',
                         minute: '2-digit'
                     })
+                    
                 }));
                 setOrders(formattedOrders);
+              
             })
             .catch(error => {
                 console.error('Error fetching orders:', error);

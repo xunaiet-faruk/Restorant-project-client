@@ -35,7 +35,7 @@ const ManageFood = () => {
     const axios = UseAxios();
     const itemsPerPage = 8;
 
-    // Fetch all foods
+    
     useEffect(() => {
         const fetchFoods = async () => {
             try {
@@ -99,7 +99,6 @@ const ManageFood = () => {
 
   
 
-    // Handle delete
     const handleDelete = async (id) => {
         const result = await Swal.fire({
             title: "Are you sure?",
@@ -127,7 +126,6 @@ const ManageFood = () => {
 
    
 
-    // View food
     const handleViewFood = (food) => {
         console.log("Viewing food:", food);
         setSelectedFood(food);
@@ -141,7 +139,6 @@ const ManageFood = () => {
         setShowEditModal(true);
     };
 
-    // Save edited food
     const handleSaveEdit = async (updatedData) => {
         try {
             console.log("Saving updated data:", updatedData);
@@ -174,7 +171,7 @@ const ManageFood = () => {
         }
     };
 
-    // Close modals
+    
     const handleCloseViewModal = () => {
         setShowViewModal(false);
         setSelectedFood(null);
@@ -185,7 +182,6 @@ const ManageFood = () => {
         setEditingFood(null);
     };
 
-    // Get status badge color
     const getStatusBadge = (status) => {
         switch (status) {
             case 'available':
