@@ -65,7 +65,7 @@ const router = createBrowserRouter([
 
             // admin dashboard
             {
-                path: '',
+                path: 'admin',
                 element: <AdminRote><AdminOverview /></AdminRote>
             },
 

@@ -1,17 +1,39 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
-import { useContext, useState } from "react";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
 import './dashboard.css'
 import { AuthContext } from "../Authentication/Provider/AuthProbider";
-import { FiUser } from "react-icons/fi";
+import { FiUser, FiHome, FiLogOut, FiPhone, FiMail } from "react-icons/fi";
+import { FaRegEnvelope, FaPhone } from "react-icons/fa";
 import UseRole from "../Authentication/RolebaseAccess/UseRole";
 
 const Dashboard = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const { user } = useContext(AuthContext)
-    const [role, roleLoading] =UseRole();
+    const { user, logout } = useContext(AuthContext);
+    const [role, roleLoading] = UseRole();
+    const navigate = useNavigate();
+
+    // Redirect logic
+    useEffect(() => {
+        if (!roleLoading && role && window.location.pathname === '/dashboard') {
+            if (role === "Admin") {
+                navigate('/dashboard/admin', { replace: true });
+            } else {
+                navigate('/dashboard/userHome', { replace: true });
+            }
+        }
+    }, [role, roleLoading, navigate]);
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
 
     if (roleLoading) {
-        return <div className="text-center mt-20">Loading...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+            </div>
+        );
     }
 
     const userMenu = [
@@ -23,14 +45,21 @@ const Dashboard = () => {
     ];
 
     const adminMenu = [
-        { path: '/dashboard', name: 'Overview', icon: '📊', end: true },
+        { path: '/dashboard/admin', name: 'Overview', icon: '📊', end: true },
         { path: '/dashboard/addfood', name: 'Add-Food', icon: '➕', end: true },
         { path: '/dashboard/manageFood', name: 'Manage-Food', icon: '📋', end: true },
         { path: '/dashboard/manageorders', name: 'Manage-Orders', icon: '📦', end: true },
         { path: '/dashboard/manageusers', name: 'Manage-Users', icon: '👥', end: true },
     ];
 
-    const navigationItems= role === "Admin" ? adminMenu : userMenu;
+    const navigationItems = role === "Admin" ? adminMenu : userMenu;
+
+    // 🔥 Bottom menu items with underline
+    const bottomMenuItems = [
+        { path: '/', name: 'Home', icon: FiHome, onClick: () => navigate('/') },
+        { name: 'Email', icon: FiMail, onClick: () => window.location.href = 'xunaiet28@gmail.com' },
+        { name: 'Logout', icon: FiLogOut, onClick: handleLogout, isLogout: true },
+    ];
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -70,29 +99,31 @@ const Dashboard = () => {
                 bg-gradient-to-b from-amber-50 to-white
                 shadow-xl border-r border-amber-100
                 overflow-y-auto sidebar-scrollbar
+                flex flex-col
             `}>
-                {/* Restaurant Logo/Brand */}
-                <div className="p-6 border-b border-amber-100 sticky top-0 bg-gradient-to-b from-amber-50 to-white z-10">
-                   <Link to={'/'}>
-                    <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
-                            <span className="text-2xl">🍽️</span>
+                {/* Restaurant Logo/Brand - Fixed at top */}
+                <div className="p-6 border-b border-amber-100 bg-gradient-to-b from-amber-50 to-white z-10 flex-shrink-0">
+                    <Link to={'/'}>
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
+                                <span className="text-2xl">🍽️</span>
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold text-amber-800">TasteTribe</h1>
+                                <p className="text-xs text-amber-600">Restaurant Dashboard</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-amber-800">TasteTribe</h1>
-                            <p className="text-xs text-amber-600">Restaurant Dashboard</p>
-                        </div>
-                    </div></Link>
+                    </Link>
                 </div>
 
-                {/* Navigation Links */}
-                <nav className="p-4 pb-24">
+                {/* Navigation Links - Scrollable area */}
+                <nav className="p-4 flex-1 overflow-y-auto">
                     <ul className="space-y-2">
                         {navigationItems.map((item) => (
                             <li key={item.path}>
                                 <NavLink
                                     to={item.path}
-                                    end={item.end} // end prop added
+                                    end={item.end}
                                     onClick={() => setIsSidebarOpen(false)}
                                     className={({ isActive }) => {
                                         return `
@@ -117,8 +148,52 @@ const Dashboard = () => {
                     </ul>
                 </nav>
 
-                {/* User Profile Section */}
-                <div className="sticky bottom-0 left-0 right-0 p-4 border-t border-amber-100 bg-white/90 backdrop-blur-sm">
+                {/* 🔥 Divider with underline */}
+                <div className="relative px-4 my-2">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t-2 border-amber-200"></div>
+                    </div>
+                    <div className="relative flex justify-center">
+                        <span className="bg-gradient-to-b from-amber-50 to-white px-4 text-xs font-medium text-amber-600 uppercase tracking-wider">
+                            Quick Links
+                        </span>
+                    </div>
+                </div>
+
+                {/* 🔥 Bottom Menu Items - Home, Contact, Email, Logout */}
+                <div className="p-4 space-y-1">
+                    {bottomMenuItems.map((item, index) => {
+                        const Icon = item.icon;
+                        return (
+                            <button
+                                key={index}
+                                onClick={() => {
+                                    item.onClick();
+                                    setIsSidebarOpen(false);
+                                }}
+                                className={`
+                                    w-full flex items-center space-x-3 px-4 py-3 rounded-xl
+                                    transition-all duration-200 group
+                                    ${item.isLogout
+                                        ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
+                                        : 'text-gray-600 hover:bg-amber-100 hover:text-amber-700'
+                                    }
+                                `}
+                            >
+                                <Icon className={`w-5 h-5 ${item.isLogout ? 'text-red-500' : 'text-gray-500 group-hover:text-amber-600'}`} />
+                                <span className="font-medium">{item.name}</span>
+                                {item.name === 'Email' && (
+                                    <span className="ml-auto text-xs text-gray-400 group-hover:text-amber-600">
+                                        support
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* User Profile Section - Fixed at bottom */}
+                <div className="flex-shrink-0 p-4 border-t border-amber-100 bg-white/90 backdrop-blur-sm sticky bottom-0 left-0 right-0">
                     <div className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-amber-50 transition-colors cursor-pointer">
                         <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold overflow-hidden">
                             <img
@@ -155,7 +230,13 @@ const Dashboard = () => {
                 <div className="hidden lg:block bg-white shadow-sm sticky top-0 z-10">
                     <div className="flex items-center justify-between px-8 py-4">
                         <div className="flex items-center space-x-4">
-                            <h2 className="text-xl font-semibold text-gray-800">Welcome {user?.displayName || 'Guest'} 👋</h2>
+                            <h2 className="text-xl font-semibold text-gray-800">
+                                Welcome {user?.displayName || 'Guest'} 👋
+                            </h2>
+                            {/* Role Badge */}
+                            <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
+                                {role === "Admin" ? "Administrator" : "Customer"}
+                            </span>
                         </div>
                         <div className="flex items-center space-x-4">
                             <button className="p-2 hover:bg-gray-100 rounded-lg relative">
@@ -186,7 +267,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Outlet - Dynamic Content */}
-                <div className="p-4 lg:p-8 ">
+                <div className="p-4 lg:p-8">
                     <div className="container mx-auto">
                         <Outlet />
                     </div>
