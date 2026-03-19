@@ -18,23 +18,22 @@ const Pay = () => {
     const [userProfile, setUserProfile] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    
     const [formData, setFormData] = useState({
         phone: '',
         address: '',
         city: '',
         postalCode: ''
     });
+
     useEffect(() => {
         const fetchUserData = async () => {
-            // যদি user না থাকে, তাহলে লোডিং false করে return
             if (!user?.email) {
-                setLoading(false);  // ✅ FIX: user না থাকলেও লোডিং বন্ধ করো
+                setLoading(false);
                 return;
             }
 
             try {
-                setLoading(true);  // লোডিং শুরু
+                setLoading(true);
 
                 // ইউজারের প্রোফাইল এবং অর্ডার একসাথে ফেচ করুন
                 const [profileRes, ordersRes] = await Promise.all([
@@ -44,9 +43,14 @@ const Pay = () => {
 
                 setUserProfile(profileRes.data);
 
-                // শুধু পেন্ডিং অর্ডারগুলো নিন
-                const pendingOrders = ordersRes.data.filter(order => order.status === 'pending');
-                setUserOrders(pendingOrders);
+                // 🔥 শুধু "Processing" এবং "Delivered" স্ট্যাটাসের অর্ডার নিন
+                // "pending" এবং "cancelled" বাদ দিন
+                const payableOrders = ordersRes.data.filter(order =>
+                    order.status === 'Processing' || order.status === 'Delivered'
+                );
+
+                console.log("💰 Payable Orders (Processing & Delivered):", payableOrders);
+                setUserOrders(payableOrders);
 
                 // ইউজারের প্রোফাইল থেকে ফোন এবং অ্যাড্রেস সেট করুন (যদি থাকে)
                 if (profileRes.data) {
@@ -61,7 +65,7 @@ const Pay = () => {
             } catch (error) {
                 console.error("Error fetching user data:", error);
             } finally {
-                setLoading(false);  // ✅ সবসময় false হবে
+                setLoading(false);
             }
         };
 
@@ -76,13 +80,15 @@ const Pay = () => {
         }));
     };
 
+    // 🔥 শুধু "Processing" এবং "Delivered" অর্ডার নিয়ে paymentSummary তৈরি করুন
     const paymentSummary = {
         items: userOrders.map(order => ({
             _id: order._id,
             name: order.name,
             quantity: order.quantity,
             price: order.price,
-            image: order.image
+            image: order.image,
+            status: order.status // স্ট্যাটাস যোগ করুন
         })),
         deliveryCharge: 60,
         discount: userOrders.length > 0 ? 100 : 0,
@@ -103,13 +109,21 @@ const Pay = () => {
     const calculateTotal = () => {
         return calculateSubtotal() + paymentSummary.deliveryCharge - paymentSummary.discount + paymentSummary.vat;
     };
+
     const handlePay = async () => {
         try {
+            // Validate form data
+            if (!formData.phone || !formData.address) {
+                alert("Please fill in all delivery information");
+                return;
+            }
+
             const productIds = paymentSummary.items.map(item => ({
                 name: item.name,
                 quantity: item.quantity,
                 price: item.price,
                 foodId: item._id,
+                status: item.status // স্ট্যাটাস পাঠান
             }));
 
             const paymentInfo = {
@@ -125,6 +139,9 @@ const Pay = () => {
                 products: productIds,
                 status: "pending"
             };
+
+            console.log("📤 Sending Payment Info:", paymentInfo);
+
             const response = await axios.post('/create-ssl-payment', paymentInfo);
 
             console.log("📥 Response:", response.data);
@@ -141,7 +158,23 @@ const Pay = () => {
             console.error("❌ Error:", error);
             alert("Payment error: " + error.message);
         }
-    }
+    };
+
+    // 🔥 Status badge component
+    const StatusBadge = ({ status }) => {
+        const statusColors = {
+            'Processing': 'bg-blue-100 text-blue-700',
+            'Delivered': 'bg-green-100 text-green-700',
+            'pending': 'bg-yellow-100 text-yellow-700',
+            'cancelled': 'bg-red-100 text-red-700'
+        };
+
+        return (
+            <span className={`text-xs px-2 py-1 rounded-full ${statusColors[status] || 'bg-gray-100 text-gray-700'}`}>
+                {status}
+            </span>
+        );
+    };
 
     if (loading) {
         return (
@@ -169,7 +202,7 @@ const Pay = () => {
                         </h1>
                         <p className="text-gray-500 flex items-center gap-2 mt-1">
                             <FaLock className="text-amber-500" />
-                            Powered by SSLCommerz - 256-bit Secure Payment
+                            {userOrders.length} items ready for payment
                         </p>
                     </div>
                 </div>
@@ -338,7 +371,11 @@ const Pay = () => {
                             </button>
 
                             {userOrders.length === 0 && (
-                                <p className="text-center text-gray-500 mt-4">No pending orders to pay</p>
+                                <div className="text-center py-8">
+                                    <FaMoneyBillAlt className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                    <p className="text-gray-500">No items ready for payment</p>
+                                    <p className="text-xs text-gray-400 mt-2">Only Processing and Delivered orders can be paid</p>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -356,6 +393,9 @@ const Pay = () => {
                             <h3 className="text-white font-semibold flex items-center gap-2">
                                 <FaCheckCircle />
                                 Order Summary
+                                <span className="ml-auto text-xs bg-white/20 px-2 py-1 rounded-full">
+                                    {userOrders.length} items
+                                </span>
                             </h3>
                         </div>
 
@@ -365,9 +405,12 @@ const Pay = () => {
                                 <>
                                     <div className="space-y-3 mb-4">
                                         {paymentSummary.items.map((item, index) => (
-                                            <div key={item._id} className="flex justify-between items-center">
-                                                <div>
-                                                    <p className="font-medium text-gray-800">{item.name}</p>
+                                            <div key={item._id} className="flex justify-between items-center border-b pb-2">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-medium text-gray-800">{item.name}</p>
+                                                        <StatusBadge status={item.status} />
+                                                    </div>
                                                     <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                                                 </div>
                                                 <p className="font-semibold">৳{item.price * item.quantity}</p>

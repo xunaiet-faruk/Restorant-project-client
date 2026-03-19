@@ -12,7 +12,6 @@ const Dashboard = () => {
     const [role, roleLoading] = UseRole();
     const navigate = useNavigate();
 
-    // Redirect logic
     useEffect(() => {
         if (!roleLoading && role && window.location.pathname === '/dashboard') {
             if (role === "Admin") {
@@ -160,7 +159,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* 🔥 Bottom Menu Items - Home, Contact, Email, Logout */}
+                {/*  Bottom Menu Items - Home, Contact, Email, Logout */}
                 <div className="p-4 space-y-1">
                     {bottomMenuItems.map((item, index) => {
                         const Icon = item.icon;

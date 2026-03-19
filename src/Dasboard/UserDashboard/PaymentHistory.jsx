@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import {
     FaHistory, FaShoppingBag, FaCalendarAlt,
     FaMoneyBillWave, FaCheckCircle, FaEye,
-    FaDownload, FaPrint, FaArrowRight,
-    FaWallet, FaClock
+    FaDownload, FaArrowRight,
+    FaWallet, FaClock, FaUtensils
 } from 'react-icons/fa';
 import { AuthContext } from '../../Authentication/Provider/AuthProbider';
 import UseAxios from '../../Hooks/UseAxios';
@@ -14,9 +14,14 @@ const PaymentHistory = () => {
     const { user } = useContext(AuthContext);
     const axios = UseAxios();
     const navigate = useNavigate();
-    const [payments, setPayments] = useState([]);
+    const [paymentData, setPaymentData] = useState({
+        payments: [],
+        orders: [],
+        totalSpent: 0,
+        totalOrders: 0
+    });
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all'); // all, lastMonth, last3Months
+    const [filter, setFilter] = useState('all');
 
     useEffect(() => {
         const fetchPaymentHistory = async () => {
@@ -28,37 +33,11 @@ const PaymentHistory = () => {
             try {
                 setLoading(true);
 
-                // Fetch delivered orders from BuyCollection
-                const ordersRes = await axios.get(`/buyFood/${user.email}`);
-                const deliveredOrders = ordersRes.data.filter(order => order.status === 'Delivered');
+                // নতুন API কল
+                const response = await axios.get(`/payment/history/${user.email}`);
+                console.log("📥 Payment History Data:", response.data);
 
-                // Group orders by transaction ID
-                const groupedPayments = deliveredOrders.reduce((acc, order) => {
-                    const transId = order.transactionId || 'N/A';
-                    if (!acc[transId]) {
-                        acc[transId] = {
-                            transactionId: transId,
-                            date: order.paymentDate || order.orderDate,
-                            items: [],
-                            total: 0,
-                            status: order.status
-                        };
-                    }
-                    acc[transId].items.push({
-                        name: order.name,
-                        quantity: order.quantity,
-                        price: order.price,
-                        foodId: order.foodId
-                    });
-                    acc[transId].total += order.price * order.quantity;
-                    return acc;
-                }, {});
-
-                const formattedPayments = Object.values(groupedPayments).sort((a, b) =>
-                    new Date(b.date) - new Date(a.date)
-                );
-
-                setPayments(formattedPayments);
+                setPaymentData(response.data);
 
             } catch (error) {
                 console.error("Error fetching payment history:", error);
@@ -80,24 +59,44 @@ const PaymentHistory = () => {
         });
     };
 
-    const filterPayments = () => {
+    // ফিল্টার অনুযায়ী অর্ডার ফিল্টার করুন
+    const filterOrders = () => {
         const now = new Date();
         const lastMonth = new Date(now.setMonth(now.getMonth() - 1));
         const last3Months = new Date(now.setMonth(now.getMonth() - 2));
 
         switch (filter) {
             case 'lastMonth':
-                return payments.filter(p => new Date(p.date) >= lastMonth);
+                return paymentData.orders.filter(o => new Date(o.paymentDate || o.orderDate) >= lastMonth);
             case 'last3Months':
-                return payments.filter(p => new Date(p.date) >= last3Months);
+                return paymentData.orders.filter(o => new Date(o.paymentDate || o.orderDate) >= last3Months);
             default:
-                return payments;
+                return paymentData.orders;
         }
     };
 
-    const filteredPayments = filterPayments();
-    const totalSpent = filteredPayments.reduce((sum, payment) => sum + payment.total, 0);
-    const totalOrders = filteredPayments.reduce((sum, payment) => sum + payment.items.length, 0);
+    const filteredOrders = filterOrders();
+    const filteredTotal = filteredOrders.reduce((sum, order) => sum + (order.price * order.quantity), 0);
+
+    // গ্রুপ অর্ডার by transaction ID
+    const groupedTransactions = filteredOrders.reduce((acc, order) => {
+        const transId = order.transactionId || 'N/A';
+        if (!acc[transId]) {
+            acc[transId] = {
+                transactionId: transId,
+                date: order.paymentDate || order.orderDate,
+                items: [],
+                total: 0
+            };
+        }
+        acc[transId].items.push(order);
+        acc[transId].total += order.price * order.quantity;
+        return acc;
+    }, {});
+
+    const transactions = Object.values(groupedTransactions).sort((a, b) =>
+        new Date(b.date) - new Date(a.date)
+    );
 
     if (loading) {
         return (
@@ -125,7 +124,8 @@ const PaymentHistory = () => {
                                 Payment <span className="text-amber-500">History</span>
                             </h1>
                             <p className="text-gray-500">
-                                View all your completed payments and orders
+                                You have made <span className="font-bold text-amber-600">{paymentData.totalOrders}</span> payments totaling{' '}
+                                <span className="font-bold text-amber-600">৳{paymentData.totalSpent.toFixed(2)}</span>
                             </p>
                         </div>
                     </div>
@@ -148,13 +148,13 @@ const PaymentHistory = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+                className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
             >
                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-amber-100">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm text-gray-500">Total Payments</p>
-                            <p className="text-3xl font-bold text-gray-800">{filteredPayments.length}</p>
+                            <p className="text-3xl font-bold text-gray-800">{paymentData.payments.length}</p>
                         </div>
                         <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
                             <FaWallet className="text-2xl text-amber-500" />
@@ -166,7 +166,7 @@ const PaymentHistory = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm text-gray-500">Total Items</p>
-                            <p className="text-3xl font-bold text-gray-800">{totalOrders}</p>
+                            <p className="text-3xl font-bold text-gray-800">{paymentData.totalOrders}</p>
                         </div>
                         <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
                             <FaShoppingBag className="text-2xl text-amber-500" />
@@ -178,16 +178,30 @@ const PaymentHistory = () => {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm text-gray-500">Total Spent</p>
-                            <p className="text-3xl font-bold text-amber-500">৳{totalSpent.toFixed(2)}</p>
+                            <p className="text-3xl font-bold text-amber-500">৳{paymentData.totalSpent.toFixed(2)}</p>
                         </div>
                         <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
                             <FaMoneyBillWave className="text-2xl text-amber-500" />
                         </div>
                     </div>
                 </div>
+
+                <div className="bg-white rounded-2xl p-6 shadow-lg border border-amber-100">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500">Avg. per Order</p>
+                            <p className="text-3xl font-bold text-gray-800">
+                                ৳{(paymentData.totalSpent / (paymentData.totalOrders || 1)).toFixed(2)}
+                            </p>
+                        </div>
+                        <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                            <FaClock className="text-2xl text-amber-500" />
+                        </div>
+                    </div>
+                </div>
             </motion.div>
 
-            {/* Payment History Table */}
+            {/* Transactions Table */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -195,6 +209,13 @@ const PaymentHistory = () => {
                 className="max-w-7xl mx-auto"
             >
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <div className="p-6 border-b border-gray-200">
+                        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                            <FaUtensils className="text-amber-500" />
+                            Transaction History ({transactions.length})
+                        </h2>
+                    </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead className="bg-gradient-to-r from-amber-500 to-amber-600 text-white">
@@ -205,15 +226,14 @@ const PaymentHistory = () => {
                                     <th className="p-4 text-left">Items</th>
                                     <th className="p-4 text-left">Quantity</th>
                                     <th className="p-4 text-left">Total</th>
-                                    <th className="p-4 text-left">Status</th>
                                     <th className="p-4 text-left">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredPayments.length > 0 ? (
-                                    filteredPayments.map((payment, index) => (
+                                {transactions.length > 0 ? (
+                                    transactions.map((transaction, index) => (
                                         <motion.tr
-                                            key={payment.transactionId}
+                                            key={transaction.transactionId}
                                             initial={{ opacity: 0, x: -20 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: index * 0.05 }}
@@ -222,18 +242,18 @@ const PaymentHistory = () => {
                                             <td className="p-4 font-medium text-gray-600">{index + 1}</td>
                                             <td className="p-4">
                                                 <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                                                    {payment.transactionId.slice(-10)}
+                                                    {transaction.transactionId.slice(-10)}
                                                 </span>
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex items-center gap-2 text-gray-600">
                                                     <FaCalendarAlt className="text-amber-400" />
-                                                    <span className="text-sm">{formatDate(payment.date)}</span>
+                                                    <span className="text-sm">{formatDate(transaction.date)}</span>
                                                 </div>
                                             </td>
                                             <td className="p-4">
                                                 <div className="space-y-1">
-                                                    {payment.items.map((item, i) => (
+                                                    {transaction.items.map((item, i) => (
                                                         <div key={i} className="text-sm font-medium text-gray-800">
                                                             {item.name}
                                                         </div>
@@ -242,7 +262,7 @@ const PaymentHistory = () => {
                                             </td>
                                             <td className="p-4">
                                                 <div className="space-y-1">
-                                                    {payment.items.map((item, i) => (
+                                                    {transaction.items.map((item, i) => (
                                                         <div key={i} className="text-sm text-gray-600">
                                                             x{item.quantity}
                                                         </div>
@@ -251,37 +271,23 @@ const PaymentHistory = () => {
                                             </td>
                                             <td className="p-4">
                                                 <span className="font-bold text-amber-600">
-                                                    ৳{payment.total}
+                                                    ৳{transaction.total}
                                                 </span>
                                             </td>
                                             <td className="p-4">
-                                                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit">
-                                                    <FaCheckCircle className="text-xs" />
-                                                    {payment.status}
-                                                </span>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => navigate(`/payment/success/${payment.transactionId}`)}
-                                                        className="p-2 bg-amber-100 rounded-lg hover:bg-amber-200 transition-colors group"
-                                                        title="View Details"
-                                                    >
-                                                        <FaEye className="text-amber-600 group-hover:scale-110 transition-transform" />
-                                                    </button>
-                                                    <button
-                                                        className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors group"
-                                                        title="Download Receipt"
-                                                    >
-                                                        <FaDownload className="text-gray-600 group-hover:scale-110 transition-transform" />
-                                                    </button>
-                                                </div>
+                                                <button
+                                                    onClick={() => navigate(`/payment/success/${transaction.transactionId}`)}
+                                                    className="p-2 bg-amber-100 rounded-lg hover:bg-amber-200 transition-colors group"
+                                                    title="View Details"
+                                                >
+                                                    <FaEye className="text-amber-600 group-hover:scale-110 transition-transform" />
+                                                </button>
                                             </td>
                                         </motion.tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="8" className="p-12 text-center">
+                                        <td colSpan="7" className="p-12 text-center">
                                             <div className="flex flex-col items-center gap-4">
                                                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
                                                     <FaHistory className="w-8 h-8 text-gray-400" />
@@ -305,39 +311,45 @@ const PaymentHistory = () => {
                         </table>
                     </div>
 
-                    {/* Footer Summary */}
-                    {filteredPayments.length > 0 && (
-                        <div className="p-6 bg-gray-50 border-t">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                <div className="bg-white rounded-xl p-4 shadow-sm">
-                                    <p className="text-xs text-gray-500 mb-1">Average Order Value</p>
-                                    <p className="text-xl font-bold text-gray-800">
-                                        ৳{(totalSpent / filteredPayments.length).toFixed(2)}
-                                    </p>
+                    {/* Summary */}
+                    {transactions.length > 0 && (
+                        <div className="p-6 bg-amber-50 border-t">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-white rounded-xl p-4">
+                                    <p className="text-sm text-gray-500 mb-1">Payment Summary</p>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Total Transactions:</span>
+                                            <span className="font-bold">{transactions.length}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Total Items:</span>
+                                            <span className="font-bold">{filteredOrders.length}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Total Amount:</span>
+                                            <span className="font-bold text-amber-600">৳{filteredTotal.toFixed(2)}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="bg-white rounded-xl p-4 shadow-sm">
-                                    <p className="text-xs text-gray-500 mb-1">Most Ordered</p>
-                                    <p className="text-xl font-bold text-gray-800">
-                                        {(() => {
-                                            const items = filteredPayments.flatMap(p => p.items);
-                                            const counts = items.reduce((acc, item) => {
-                                                acc[item.name] = (acc[item.name] || 0) + 1;
+                                <div className="bg-white rounded-xl p-4">
+                                    <p className="text-sm text-gray-500 mb-1">Most Popular Items</p>
+                                    <div className="space-y-2">
+                                        {Object.entries(
+                                            filteredOrders.reduce((acc, order) => {
+                                                acc[order.name] = (acc[order.name] || 0) + order.quantity;
                                                 return acc;
-                                            }, {});
-                                            const mostOrdered = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-                                            return mostOrdered ? mostOrdered[0].slice(0, 15) + '...' : 'N/A';
-                                        })()}
-                                    </p>
-                                </div>
-                                <div className="bg-white rounded-xl p-4 shadow-sm">
-                                    <p className="text-xs text-gray-500 mb-1">Last Payment</p>
-                                    <p className="text-xl font-bold text-gray-800">
-                                        {filteredPayments.length > 0 ? formatDate(filteredPayments[0].date).split(',')[0] : 'N/A'}
-                                    </p>
-                                </div>
-                                <div className="bg-white rounded-xl p-4 shadow-sm">
-                                    <p className="text-xs text-gray-500 mb-1">Payment Methods</p>
-                                    <p className="text-xl font-bold text-gray-800">SSLCommerz</p>
+                                            }, {})
+                                        )
+                                            .sort((a, b) => b[1] - a[1])
+                                            .slice(0, 3)
+                                            .map(([name, count]) => (
+                                                <div key={name} className="flex justify-between">
+                                                    <span className="text-gray-600">{name}:</span>
+                                                    <span className="font-bold">{count} pcs</span>
+                                                </div>
+                                            ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
